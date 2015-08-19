@@ -1,0 +1,9 @@
+<!doctype html>
+<title>pydentity - user list</title>
+
+<ul>
+    {% for user in users %}
+        <li><a href="{{ url_for('user', username=user) }}">{{ user }}</a></li>
+    {% endfor %}
+
+</ul>
