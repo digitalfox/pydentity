@@ -1,16 +1,40 @@
 <!doctype html>
-<title>pydentity - user</title>
+<html>
+<head>
+    <title>pydentity - user</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+</head>
 
-<h1>Hello {{ username }}</h1>
-<h4>It's a good time to change your password !</h4>
 
-<form method="POST" action="">
-Old password:<br>
-<input type="password" name="old_password"><br>
-New password:<br>
-<input type="password" name="new_password"><br>
-Repeait:<br>
-<input type="password" name="repeat_password"><br>
-<br><br>
-<input type="submit" value="Submit">
+<form class="form-horizontal" method="POST" action="">
+    <fieldset>
+
+        <legend>Change password for user {{ username }}</legend>
+        <div class="row">
+            <div class="form-group col-md-6">
+              <label class="col-md-6 control-label" for="old_password">Old password</label>
+              <div class="col-md-6">
+                <input id="old_password" name="old_password" type="password" required pattern="\w+" placeholder="" class="form-control input-md">
+              </div>
+              <label class="col-md-6 control-label" for="new_password">New password</label>
+              <div class="col-md-6">
+                <input id="new_password" name="new_password" type="password" required pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" onchange="form.repeat_password.pattern = this.value;" title="Upper and lower case, numeric. At least 8 char" placeholder="Upper and lower case, numeric. At least 8 char" class="form-control input-md" >
+              </div>
+              <label class="col-md-6 control-label" for="repeat_password">Repeat your new password</label>
+              <div class="col-md-6">
+                <input id="repeat_password" name="repeat_password" type="password" placeholder="Be smart, don't copy and paste. Retype it" title="Password does not match your new password" class="form-control input-md" required="">
+              </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group col-md-6">
+              <label class="col-md-6 control-label" for="singlebutton"></label>
+              <div class="col-md-6">
+                <button id="singlebutton" name="singlebutton" class="btn btn-primary">Validate</button>
+              </div>
+            </div>
+        </div>
+    </fieldset>
 </form>
+</html>
