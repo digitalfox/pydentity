@@ -24,7 +24,7 @@ def home():
     return "Hello World!"
 
 
-@app.route('/user/list')
+@app.route('/user_list')
 def list_users():
     with htpasswd.Basic(PWD_FILE, mode="md5") as userdb:
         return render_template("list.html", users=userdb.users)
