@@ -1,0 +1,34 @@
+body {
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}
+
+legend {
+    background-color: #F7F7F7;
+}
+.change-password {
+  background-color: #F7F7F7;
+  margin: 0 auto 10px;
+  overflow: hidden;
+}
+
+.change-password input[type=submit] {
+  width: 100%;
+  display: block;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.change-password input[type=text], input[type=password] {
+  height: 44px;
+  margin-bottom: 10px;
+  border: 1px solid #d9d9d9;
+  border-top: 1px solid #c0c0c0;
+}
+
+.change-password input[type=text]:hover, input[type=password]:hover {
+  border: 1px solid #b9b9b9;
+  border-top: 1px solid #a0a0a0;
+}

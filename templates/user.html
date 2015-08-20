@@ -3,16 +3,19 @@
 <head>
     <title>pydentity - user</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
-
-<form class="form-horizontal" method="POST" action="">
-    <fieldset>
+<div class="containter">
+<div class="col-lg-6 col-lg-offset-3">
+<div class="row">&nbsp;</div>
+<div class="row">
+<form class="form-horizontal centered" method="POST" action="">
+    <fieldset class="change-password">
 
         <legend>Change password for user {{ username }}</legend>
         <div class="row">
-            <div class="form-group col-md-6">
+            <div class="form-group col-md-12">
               <label class="col-md-6 control-label" for="old_password">Old password</label>
               <div class="col-md-6">
                 <input id="old_password" name="old_password" type="password" required pattern="\w+" placeholder="" class="form-control input-md">
@@ -28,7 +31,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="form-group col-md-6">
+            <div class="form-group col-md-12">
               <label class="col-md-6 control-label" for="singlebutton"></label>
               <div class="col-md-6">
                 <button id="singlebutton" name="singlebutton" class="btn btn-primary">Validate</button>
@@ -37,4 +40,7 @@
         </div>
     </fieldset>
 </form>
+</div>
+</div>
+ </div>
 </html>
