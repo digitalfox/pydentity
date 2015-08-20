@@ -6,21 +6,22 @@ Mini application to manage apache htpasswd file
 """
 
 import subprocess
+from os.path import dirname, join
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 import htpasswd
 
 
 app = Flask(__name__)
 
 
-PWD_FILE = "htpasswd"
+PWD_FILE = join(dirname(__file__), "htpasswd")
 
 
 @app.route("/")
 def home():
-    if request.headers.get("REMOTE_USER"):
-        return user(request.headers.get("REMOTE_USER"))
+    if request.environ.get('REMOTE_USER'):
+        return redirect(url_for("user", username=request.environ.get('REMOTE_USER')))
     return "Hello World!"
 
 
@@ -50,7 +51,8 @@ def user(username):
 
 
 def check_password(encrypted_passwd, clear_passwd, mode="md5"):
-    """check that password is correct against its hash"""
+    """check that password is correct against its hash
+    TODO: propose to python-htpasswd to integrate this code in his lib"""
     salt = encrypted_passwd.split("$")[2]  # Extract salt from current encrypted password
     new_encrypted_passwd = subprocess.check_output(["openssl", "passwd", "-apr1", "-salt", salt, clear_passwd]).decode('utf-8')
     return encrypted_passwd == new_encrypted_passwd
