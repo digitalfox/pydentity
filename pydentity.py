@@ -44,29 +44,29 @@ def user(username):
     with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
         if CONF["REQUIRE_REMOTE_USER"]:
             if not request.environ.get('REMOTE_USER'):
-                return "Sorry, you must be logged with http basic auth to go here"
+                return render_template("message.html", message="Sorry, you must be logged with http basic auth to go here")
             if request.environ.get('REMOTE_USER') != username:
                 # User trying to change someone else password
                 with htpasswd.Group(CONF["GROUP_FILE"]) as groups:
                     if CONF["ADMIN_GROUP"] not in groups:
-                        return "Sorry admin group '%s' is not defined. You cannot change someone else password" % CONF["ADMIN_GROUP"]
+                        return render_template("message.html", message="Sorry admin group '%s' is not defined. You cannot change someone else password" % CONF["ADMIN_GROUP"])
                     if not groups.is_user_in(request.environ.get('REMOTE_USER'), CONF["ADMIN_GROUP"]):
-                        return "Sorry, you must belongs to group '%s' to change someone else password" % CONF["ADMIN_GROUP"]
+                        return render_template("message.html", message="Sorry, you must belongs to group '%s' to change someone else password" % CONF["ADMIN_GROUP"])
 
         if request.method == "GET":
             if username in userdb:
                 return render_template("user.html", username=username)
             else:
-                return "Unknown user %s" % username
+                return render_template("message.html", message="Unknown user %s" % username)
         else:
             if request.form["new_password"] != request.form["repeat_password"]:
-                return "Password differ. Please hit back and try again"
+                return render_template("message.html", message="Password differ. Please hit back and try again")
             if not check_password(userdb.new_users[username], request.form["old_password"]):
-                return "password does not match"
+                return render_template("message.html", message="password does not match")
             else:
                 # Ok, ready to change password
                 userdb.change_password(username, request.form["new_password"])
-                return "Password changed"
+                return render_template("message.html", message="Password changed", success=True)
 
 
 def check_password(encrypted_passwd, clear_passwd, mode="md5"):

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="container">
+    <div class="row">&nbsp;</div>
+    <div class="wells">
+        {% if success%}<div class="alert alert-success">
+        {% else%}<div class="alert alert-danger">
+        {% endif %}
+            {{ message }}
+        </div>
+    </div>
+    {% if not success %}
+        <em>Go back to previous page and try to fix this issue (if you can)</em>
+    {% endif %}
+</div>
+{% endblock %}
