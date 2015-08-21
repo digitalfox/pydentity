@@ -15,12 +15,14 @@ import htpasswd
 app = Flask(__name__)
 
 # Configuration
-PWD_FILE = join(dirname(__file__), "htpasswd")
-GROUP_FILE = join(dirname(__file__), "htgroup")
-# User may belong to this group to be able to change other user password. Need to require remote user (see below)
-ADMIN_GROUP = "admin"
-# Whether to require http basic auth upstream (for example with apache)
-REQUIRE_REMOTE_USER = True
+CONF = {
+    "PWD_FILE": join(dirname(__file__), "htpasswd"),
+    "GROUP_FILE" : join(dirname(__file__), "htgroup"),
+    # User may belong to this group to be able to change other user password. Need to require remote user (see below)
+    "ADMIN_GROUP" : "admin",
+    # Whether to require http basic auth upstream (for example with apache)
+    "REQUIRE_REMOTE_USER": True
+}
 
 
 @app.route("/")
@@ -33,23 +35,23 @@ def home():
 
 @app.route("/list_users")
 def list_users():
-    with htpasswd.Basic(PWD_FILE, mode="md5") as userdb:
+    with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
         return render_template("list.html", users=userdb.users)
 
 
 @app.route("/user/<username>", methods=['POST', 'GET'])
 def user(username):
-    with htpasswd.Basic(PWD_FILE, mode="md5") as userdb:
-        if REQUIRE_REMOTE_USER:
+    with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
+        if CONF["REQUIRE_REMOTE_USER"]:
             if not request.environ.get('REMOTE_USER'):
                 return "Sorry, you must be logged with http basic auth to go here"
             if request.environ.get('REMOTE_USER') != username:
                 # User trying to change someone else password
-                with htpasswd.Group(GROUP_FILE) as groups:
-                    if ADMIN_GROUP not in groups:
-                        return "Sorry admin group '%s' is not defined. You cannot change someone else password" % ADMIN_GROUP
-                    if not groups.is_user_in(request.environ.get('REMOTE_USER'), ADMIN_GROUP):
-                        return "Sorry, you must belongs to group '%s' to change someone else password" % ADMIN_GROUP
+                with htpasswd.Group(CONF["GROUP_FILE"]) as groups:
+                    if CONF["ADMIN_GROUP"] not in groups:
+                        return "Sorry admin group '%s' is not defined. You cannot change someone else password" % CONF["ADMIN_GROUP"]
+                    if not groups.is_user_in(request.environ.get('REMOTE_USER'), CONF["ADMIN_GROUP"]):
+                        return "Sorry, you must belongs to group '%s' to change someone else password" % CONF["ADMIN_GROUP"]
 
         if request.method == "GET":
             if username in userdb:
