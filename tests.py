@@ -76,9 +76,33 @@ class BasicTestCase(unittest.TestCase):
 
 
     def test_change_someone_else_pwd_as_admin(self):
-        r = self.client.get("/user/user1", environ_base = { "REMOTE_USER": "user1" })
+        r = self.client.get("/user/user2", environ_base = { "REMOTE_USER": "user1" })
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Change password for user user1", r.data)
+        self.assertIn("Change password for user user2", r.data)
+        r = self.client.post("/user/user2", data = {"old_password": "user2", "new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "user1" })
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Password changed", r.data)
+
+
+    def test_change_someone_else_pwd_as_nobody(self):
+        r = self.client.get("/user/user1", environ_base = { "REMOTE_USER": "user2" })
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Sorry, you must belongs to group", r.data)
+        r = self.client.post("/user/user1", data = {"old_password": "user1", "new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "user2" })
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Sorry, you must belongs to group", r.data)
+
+
+
+    def test_bad_passwd_change(self):
+        for data in [
+            {"old_password": "XXXXX", "new_password": "new", "repeat_password":"new"},
+            {"old_password": "user2", "new_password": "XXX", "repeat_password":"new"},
+            {"old_password": "user2", "new_password": "new", "repeat_password":"XXX"},]:
+            r = self.client.post("/user/user2", data = data, environ_base = { "REMOTE_USER": "user2" })
+            self.assertEqual(r.status_code, 200)
+            self.assertNotIn("Password changed", r.data)
+
 
 if __name__ == "__main__":
     unittest.main()
