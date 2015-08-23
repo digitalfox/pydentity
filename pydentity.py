@@ -18,7 +18,7 @@ app = Flask(__name__)
 CONF = {
     "PWD_FILE": join(dirname(__file__), "htpasswd"),
     "GROUP_FILE" : join(dirname(__file__), "htgroup"),
-    # Name of the admin group..User need to belong to this group to be able to change other user password. REQUIRE_REMOTE_USER parameter is required
+    # Name of the admin group..User need to belong to this group to be able to change other user password or create new user. REQUIRE_REMOTE_USER parameter is required
     "ADMIN_GROUP" : "admin",
     # Whether to require http basic auth upstream (for example with apache)
     "REQUIRE_REMOTE_USER": True
@@ -49,24 +49,27 @@ def user(username):
                 # User trying to change someone else password
                 with htpasswd.Group(CONF["GROUP_FILE"]) as groups:
                     if CONF["ADMIN_GROUP"] not in groups:
-                        return render_template("message.html", message="Sorry admin group '%s' is not defined. You cannot change someone else password" % CONF["ADMIN_GROUP"])
+                        return render_template("message.html", message="Sorry admin group '%s' is not defined. You cannot change someone else password or create new user" % CONF["ADMIN_GROUP"])
                     if not groups.is_user_in(request.environ.get('REMOTE_USER'), CONF["ADMIN_GROUP"]):
-                        return render_template("message.html", message="Sorry, you must belongs to group '%s' to change someone else password" % CONF["ADMIN_GROUP"])
+                        return render_template("message.html", message="Sorry, you must belongs to group '%s' to change someone else password or create new users" % CONF["ADMIN_GROUP"])
 
+        new_user = username not in userdb
         if request.method == "GET":
-            if username in userdb:
-                return render_template("user.html", username=username)
-            else:
-                return render_template("message.html", message="Unknown user %s" % username)
+            return render_template("user.html", username=username, new=new_user)
         else:
             if request.form["new_password"] != request.form["repeat_password"]:
                 return render_template("message.html", message="Password differ. Please hit back and try again")
-            if not check_password(userdb.new_users[username], request.form["old_password"]):
+            if not new_user and not check_password(userdb.new_users[username], request.form["old_password"]):
                 return render_template("message.html", message="password does not match")
             else:
-                # Ok, ready to change password
-                userdb.change_password(username, request.form["new_password"])
-                return render_template("message.html", message="Password changed", success=True)
+                # Ok, ready to change password or create user
+                if new_user:
+                    userdb.add(username, request.form["new_password"])
+                    message = "User created"
+                else:
+                    userdb.change_password(username, request.form["new_password"])
+                    message = "Password changed"
+                return render_template("message.html", message=message, success=True)
 
 
 def check_password(encrypted_passwd, clear_passwd, mode="md5"):

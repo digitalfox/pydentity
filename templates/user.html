@@ -7,13 +7,19 @@
 <form class="form-horizontal centered" method="POST" action="">
     <fieldset class="change-password">
 
-        <legend>Change password for user {{ username }}</legend>
+        {% if new %}
+            <legend>Creation of user {{ username }}</legend>
+        {% else %}
+            <legend>Change password for user {{ username }}</legend>
+        {% endif %}
         <div class="row">
             <div class="form-group col-md-12">
-              <label class="col-md-6 control-label" for="old_password">Old password</label>
-              <div class="col-md-6">
-                <input id="old_password" name="old_password" type="password" required pattern="\w+" placeholder="" class="form-control input-md">
-              </div>
+              {% if not new %}
+                <label class="col-md-6 control-label" for="old_password">Old password</label>
+                <div class="col-md-6">
+                    <input id="old_password" name="old_password" type="password" required pattern="\w+" placeholder="" class="form-control input-md">
+                </div>
+              {% endif %}
               <label class="col-md-6 control-label" for="new_password">New password</label>
               <div class="col-md-6">
                 <input id="new_password" name="new_password" type="password" required pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" onchange="form.repeat_password.pattern = this.value;" title="Upper and lower case, numeric. At least 8 char" placeholder="Upper and lower case, numeric. At least 8 char" class="form-control input-md" >

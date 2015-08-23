@@ -60,7 +60,7 @@ class BasicTestCase(unittest.TestCase):
     def test_change_my_passwd(self):
         r = self.client.get("/user/user2", environ_base = { "REMOTE_USER": "user2" })
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Change password for user user2" in r.data)
+        self.assertIn("Change password for user user2", r.data)
         r = self.client.post("/user/user2", data = {"old_password": "user2", "new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "user2" })
         self.assertEqual(r.status_code, 200)
         self.assertIn("Password changed", r.data)
@@ -69,10 +69,16 @@ class BasicTestCase(unittest.TestCase):
         self.assertIn("Password changed", r.data)
 
 
-    def test_change_unknown_user(self):
+    def test_new_user(self):
         r = self.client.get("/user/xxx", environ_base = { "REMOTE_USER": "xxx" })
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Unknown user", r.data)
+        self.assertNotIn("old_password", r.data)
+        self.assertIn("Creation of user xxx", r.data)
+        r = self.client.post("/user/xxx", data = {"new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "xxx" })
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("User created", r.data)
+        with htpasswd.Basic(self.passwd, mode="md5") as userdb:
+            self.assertIn("xxx", userdb)
 
 
     def test_change_someone_else_pwd_as_admin(self):

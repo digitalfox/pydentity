@@ -7,6 +7,7 @@ Current features are:
 
 - change your password by providing the previous one
 - change other people password when you belongs the a specified admin group
+- create new users
 - handle authentication through http basic authentication (of course)
 
 Caveats, limitations, so far:
@@ -55,7 +56,7 @@ you could put in a virtual env definition:
         Require valid-user
     </Location>
 
-    WSGIDaemonProcess pydentity user=apache group=apache threads=5
+    WSGIDaemonProcess pydentity threads=5 maximum-requests=10000 display-name=pydentity
     WSGIScriptAlias / /var/www/pydentity/pydentity.wsgi
 
     <Directory /var/www/pydentity/>
@@ -73,5 +74,5 @@ Here's the parameters you may want to tune:
 
     PWD_FILE: Full path to the htpasswd file to manage. Default to <pydentity dir>/htpasswd,
     GROUP_FILE: Full path the group file to manage. Default to <pydentity dir>/htgroup
-    ADMIN_GROUP: Name of the admin group. Default to "admin". User need to belong to this group to be able to change other user password. REQUIRE_REMOTE_USER parameter is required
+    ADMIN_GROUP: Name of the admin group. Default to "admin". User need to belong to this group to be able to change other user password or create new users. REQUIRE_REMOTE_USER parameter is required
     REQUIRE_REMOTE_USER: Whether to require http basic auth upstream (for example with apache). Default to True. If False, everyone is able to change anyone password if the correct previous one is provided.
