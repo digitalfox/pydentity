@@ -4,11 +4,13 @@ Pydentity is a small web application that manage apache password file (htpasswd)
 a simple browser.
 
 Current features are:
+
 - change your password by providing the previous one
 - change other people password when you belongs the a specified admin group
 - handle authentication through http basic authentication (of course)
 
 Caveats, limitations, so far:
+
 - only md5 password hash are supported. Of course crypt password will never be. Blowfish could be supported one day
 - only support http authentication. But frankly, if you want to manage htpasswd file you should have that don't you ?
 - no way to reset password without previous one (like email or secret question for example)
@@ -24,6 +26,7 @@ Obviously, you need a WSGI compliant web server. It is tested with Apache and mo
 # Installation
 
 Prerequisites: 
+
 - python 2.7
 - WSGI compliant server (example: apache and mod_wsgi)
 - openssl command line
@@ -38,23 +41,22 @@ to you virtual env location. Install python requirements with this simple line:
 Then setup your Webserver to target pydidentity.wsgi file. Here's a sample Apache + mod_wsgi configuration snippet
 you could put in a virtual env definition:
 
+    <Location />
+        AuthName "pydentity"
+        AuthType Basic
+        AuthUserFile /var/www/htpasswd
+        Require valid-user
+    </Location>
 
- <Location />
-    AuthName "pydentity"
-    AuthType Basic
-    AuthUserFile /var/www/htpasswd
-    Require valid-user
- </Location>
+    WSGIDaemonProcess pydentity user=apache group=apache threads=5
+    WSGIScriptAlias / /var/www/pydentity/pydentity.wsgi
 
- WSGIDaemonProcess pydentity user=apache group=apache threads=5
- WSGIScriptAlias / /var/www/pydentity/pydentity.wsgi
-
- <Directory /var/www/pydentity/>
-    WSGIProcessGroup pydentity
-    WSGIApplicationGroup %{GLOBAL}
-    Order deny,allow
-    Allow from all
-  </Directory>
+    <Directory /var/www/pydentity/>
+        WSGIProcessGroup pydentity
+        WSGIApplicationGroup %{GLOBAL}
+        Order deny,allow
+        Allow from all
+    </Directory>
 
 
 # Configuration
