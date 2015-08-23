@@ -1,0 +1,5 @@
+.idea
+htpasswd
+htgroup
+venv
+*.pyc

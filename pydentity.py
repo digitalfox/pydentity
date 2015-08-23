@@ -18,7 +18,7 @@ app = Flask(__name__)
 CONF = {
     "PWD_FILE": join(dirname(__file__), "htpasswd"),
     "GROUP_FILE" : join(dirname(__file__), "htgroup"),
-    # User may belong to this group to be able to change other user password. Need to require remote user (see below)
+    # Name of the admin group..User need to belong to this group to be able to change other user password. REQUIRE_REMOTE_USER parameter is required
     "ADMIN_GROUP" : "admin",
     # Whether to require http basic auth upstream (for example with apache)
     "REQUIRE_REMOTE_USER": True
