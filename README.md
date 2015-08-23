@@ -18,10 +18,17 @@ Caveats, limitations, so far:
 
 # How it works ?
 
-Pydentity is developped on python and based on the micro framework Flask. To handle htpasswd file format, it relies
-on python htpasswd library and openssl. No database is required.
-Obviously, you need a WSGI compliant web server. It is tested with Apache and mod_wsgi, but it should works with others.
+Pydentity is developped on [python](http://www.python.org) and based on the micro framework [Flask](http://flask.pocoo.org/).
+To handle htpasswd file format, it relies on python [htpasswd library](https://github.com/thesharp/htpasswd)
+and [openssl](https://www.openssl.org/). No database is required.
 
+Obviously, you need a WSGI compliant web server. It is tested with [Apache](http://httpd.apache.org/)
+and [mod_wsgi](http://code.google.com/p/modwsgi/), but it should works with others (Gunicorn, Werkzeurg, uWSGI etc.)
+
+
+# License
+
+Pydentity is licensed under the [GNU Affero General Public Licence version 3 or newer](http://www.gnu.org/licenses/agpl-3.0.html)
 
 # Installation
 
