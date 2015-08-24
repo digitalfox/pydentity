@@ -24,10 +24,10 @@ class BasicTestCase(unittest.TestCase):
         with htpasswd.Basic(self.passwd, mode="md5") as userdb:
             userdb.add("user1", "user1")
             userdb.add("user2", "user2")
-        with htpasswd.Group(self.group) as group:
-            group.add_user("user1", "admin")
-            group.add_user("user1", "users")
-            group.add_user("user2", "users")
+        with htpasswd.Group(self.group) as groupdb:
+            groupdb.add_user("user1", "admin")
+            groupdb.add_user("user1", "users")
+            groupdb.add_user("user2", "users")
         app.config["TESTING"] = True
         CONF["PWD_FILE"] = self.passwd
         CONF["GROUP_FILE"] = self.group
@@ -99,7 +99,6 @@ class BasicTestCase(unittest.TestCase):
         self.assertIn("Sorry, you must belongs to group", r.data)
 
 
-
     def test_bad_passwd_change(self):
         for data in [
             {"old_password": "XXXXX", "new_password": "new", "repeat_password":"new"},
@@ -109,6 +108,24 @@ class BasicTestCase(unittest.TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertNotIn("Password changed", r.data)
 
+
+    def test_add_group(self):
+        r = self.client.get("/user_groups/user1", environ_base = { "REMOTE_USER": "user1" })
+        self.assertEqual(r.status_code, 200)
+        for group in ("users", "admin"):
+            self.assertIn('''name="group_%s" type="checkbox" checked''' % group, r.data)
+
+        with htpasswd.Group(self.group) as groupdb:
+            self.assertTrue(groupdb.is_user_in("user1", "users"))
+
+        r = self.client.post("/user_groups/user1", data = {"group_admin": "on"}, environ_base = { "REMOTE_USER": "user1"})
+
+        with htpasswd.Group(self.group) as groupdb:
+            self.assertEqual(r.status_code, 200)
+            self.assertFalse(groupdb.is_user_in("user1", "users"))
+            self.assertTrue(groupdb.is_user_in("user1", "admin"))
+
+        
 
 if __name__ == "__main__":
     unittest.main()

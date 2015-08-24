@@ -39,7 +39,7 @@ def list_users():
         return render_template("list.html", users=userdb.users)
 
 
-@app.route("/user/<username>", methods=['POST', 'GET'])
+@app.route("/user/<username>", methods=["POST", "GET"])
 def user(username):
     with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
         if CONF["REQUIRE_REMOTE_USER"]:
@@ -47,16 +47,17 @@ def user(username):
                 return render_template("message.html", message="Sorry, you must be logged with http basic auth to go here")
             if request.environ.get('REMOTE_USER') != username:
                 # User trying to change someone else password
-                with htpasswd.Group(CONF["GROUP_FILE"]) as groups:
-                    if CONF["ADMIN_GROUP"] not in groups:
+                with htpasswd.Group(CONF["GROUP_FILE"]) as groupsdb:
+                    if CONF["ADMIN_GROUP"] not in groupsdb:
                         return render_template("message.html", message="Sorry admin group '%s' is not defined. You cannot change someone else password or create new user" % CONF["ADMIN_GROUP"])
-                    if not groups.is_user_in(request.environ.get('REMOTE_USER'), CONF["ADMIN_GROUP"]):
+                    if not groupsdb.is_user_in(request.environ.get('REMOTE_USER'), CONF["ADMIN_GROUP"]):
                         return render_template("message.html", message="Sorry, you must belongs to group '%s' to change someone else password or create new users" % CONF["ADMIN_GROUP"])
 
         new_user = username not in userdb
         if request.method == "GET":
             return render_template("user.html", username=username, new=new_user)
         else:
+            # POST Request
             if request.form["new_password"] != request.form["repeat_password"]:
                 return render_template("message.html", message="Password differ. Please hit back and try again")
             if not new_user and not check_password(userdb.new_users[username], request.form["old_password"]):
@@ -70,6 +71,37 @@ def user(username):
                     userdb.change_password(username, request.form["new_password"])
                     message = "Password changed"
                 return render_template("message.html", message=message, success=True)
+
+
+@app.route("/user_groups/<username>", methods=["POST", "GET"])
+def user_groups(username):
+    #TODO: check user exists and belongs to admin group. Factorize code with user() function above
+    with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
+        with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
+            if request.method == "GET":
+                groups = dict()
+                for group in groupdb.groups:
+                    if groupdb.is_user_in(username, group):
+                        groups[group] = True
+                    else:
+                        groups[group] = False
+                return render_template("groups.html", groups=groups)
+            else:
+                # POST Request
+                print request.form.items()
+                checked_groups = [g.split("_", 1)[1] for g in request.form.keys() if g.startswith("group_")]
+                print checked_groups
+                for group in groupdb.groups:
+                    if group in checked_groups:
+                        if not groupdb.is_user_in(username, group):
+                            print "add user to group %s" % group
+                            groupdb.add_user(username, group)
+                    else:
+                        if groupdb.is_user_in(username, group):
+                            print "remove user from group %s" % group
+                            groupdb.delete_user(username, group)
+                return render_template("message.html", message="User groups changed", success=True)
+
 
 
 def check_password(encrypted_passwd, clear_passwd, mode="md5"):
