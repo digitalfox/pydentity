@@ -47,11 +47,10 @@ def user(username):
                 return render_template("message.html", message="Sorry, you must be logged with http basic auth to go here")
             if request.environ.get('REMOTE_USER') != username:
                 # User trying to change someone else password
-                with htpasswd.Group(CONF["GROUP_FILE"]) as groupsdb:
-                    if CONF["ADMIN_GROUP"] not in groupsdb:
-                        return render_template("message.html", message="Sorry admin group '%s' is not defined. You cannot change someone else password or create new user" % CONF["ADMIN_GROUP"])
-                    if not groupsdb.is_user_in(request.environ.get('REMOTE_USER'), CONF["ADMIN_GROUP"]):
-                        return render_template("message.html", message="Sorry, you must belongs to group '%s' to change someone else password or create new users" % CONF["ADMIN_GROUP"])
+                result, message = check_user_is_admin(request.environ.get('REMOTE_USER'))
+                if not result:
+                    # User is not admin or admin group does exist. Ciao
+                    return render_template("message.html", message=message)
 
         new_user = username not in userdb
         if request.method == "GET":
@@ -75,7 +74,12 @@ def user(username):
 
 @app.route("/user_groups/<username>", methods=["POST", "GET"])
 def user_groups(username):
-    #TODO: check user exists and belongs to admin group. Factorize code with user() function above
+
+    result, message = check_user_is_admin(request.environ.get('REMOTE_USER'))
+    if not result:
+        # User is not admin or admin group does exist. Ciao
+        return render_template("message.html", message=message)
+
     with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
         with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
             if request.method == "GET":
@@ -102,6 +106,18 @@ def user_groups(username):
                             groupdb.delete_user(username, group)
                 return render_template("message.html", message="User groups changed", success=True)
 
+
+
+def check_user_is_admin(user):
+    """Ensure username is in admin group and that admin group exists
+    @:return: tuple (result, message), result is True if user is admin, else False. message indicate reason if False"""
+    with htpasswd.Group(CONF["GROUP_FILE"]) as groupsdb:
+        if CONF["ADMIN_GROUP"] not in groupsdb:
+            return (False, "Sorry admin group '%s' is not defined. You cannot change someone else password or create new user" % CONF["ADMIN_GROUP"])
+        if not groupsdb.is_user_in(user, CONF["ADMIN_GROUP"]):
+            return (False, "Sorry, you must belongs to group '%s' to change someone else password or create new users" % CONF["ADMIN_GROUP"])
+        # Everything is fine
+        return (True, "")
 
 
 def check_password(encrypted_passwd, clear_passwd, mode="md5"):

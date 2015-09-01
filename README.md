@@ -11,6 +11,7 @@ Current features are:
 - check password strength. Note that it is not configurable yet (Upper case, lower case and numeric with a length > 8) and
 only check at browser level. Any properly crafted POST or just old browser that don't understand HTML validation can
  workaround those restrictions
+- change user groups belonging
 - handle authentication through http basic authentication (of course)
 
 Caveats, limitations, so far:
@@ -18,7 +19,7 @@ Caveats, limitations, so far:
 - only md5 password hash are supported. Of course crypt password will never be. Blowfish could be supported one day
 - only support http authentication. But frankly, if you want to manage htpasswd file you should have that don't you ?
 - no way to reset password without previous one (like email or secret question for example)
-- no group management
+- no group creation, user can be added or removed from existing groups only
 
 # How it works ?
 

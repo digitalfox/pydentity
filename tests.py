@@ -125,7 +125,16 @@ class BasicTestCase(unittest.TestCase):
             self.assertFalse(groupdb.is_user_in("user1", "users"))
             self.assertTrue(groupdb.is_user_in("user1", "admin"))
 
-        
+
+    def test_change_group_without_admin(self):
+        r = self.client.get("/user_groups/user2", environ_base = { "REMOTE_USER": "user2" })
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Sorry, you must belongs to group", r.data)
+
+        r = self.client.post("/user_groups/user2", data = {"group_admin": "on"}, environ_base = { "REMOTE_USER": "user2"})
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Sorry, you must belongs to group", r.data)
+
 
 if __name__ == "__main__":
     unittest.main()
