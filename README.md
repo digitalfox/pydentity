@@ -11,6 +11,7 @@ Current features are:
 - check password strength. Note that it is not configurable yet (Upper case, lower case and numeric with a length > 8) and
 only check at browser level. Any properly crafted POST or just old browser that don't understand HTML validation can
  workaround those restrictions
+ - redirect to custom page (given as args in url ex. /user/user1?return_to=/myapp/) after successful password change or user creation
 - change user groups belonging
 - handle authentication through http basic authentication (of course)
 

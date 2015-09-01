@@ -40,7 +40,7 @@ class BasicTestCase(unittest.TestCase):
 
 
     def test_ok_pages(self):
-        for page in ("/user/user1", "/user/user1", "list_users"):
+        for page in ("/user/user1", "user/user1", "/list_users", "/user_groups/user1"):
             r = self.client.get(page)
             self.assertEqual(r.status_code, 200)
 
@@ -55,6 +55,12 @@ class BasicTestCase(unittest.TestCase):
         r = self.client.get("/", environ_base = { "REMOTE_USER": "user42" })
         self.assertEqual(r.status_code, 302)
         self.assertIn("/user/user42", r.location)
+
+
+    def test_redirect_after_pwd_change(self):
+        r = self.client.post("/user/user2?return_to=/lala", data = {"old_password": "user2", "new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "user2" })
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/lala", r.location)
 
 
     def test_change_my_passwd(self):

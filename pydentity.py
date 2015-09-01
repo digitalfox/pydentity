@@ -69,7 +69,10 @@ def user(username):
                 else:
                     userdb.change_password(username, request.form["new_password"])
                     message = "Password changed"
-                return render_template("message.html", message=message, success=True)
+                if request.args.get("return_to"):
+                    return redirect(request.args.get("return_to"))
+                else:
+                    return render_template("message.html", message=message, success=True)
 
 
 @app.route("/user_groups/<username>", methods=["POST", "GET"])
