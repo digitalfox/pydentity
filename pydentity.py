@@ -42,17 +42,18 @@ def list_users():
 @app.route("/user/<username>", methods=["POST", "GET"])
 def user(username):
     with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
+        new_user = username not in userdb
         if CONF["REQUIRE_REMOTE_USER"]:
             if not request.environ.get('REMOTE_USER'):
                 return render_template("message.html", message="Sorry, you must be logged with http basic auth to go here")
-            if request.environ.get('REMOTE_USER') != username:
+            if request.environ.get('REMOTE_USER') != username or new_user:
                 # User trying to change someone else password
                 result, message = check_user_is_admin(request.environ.get('REMOTE_USER'))
                 if not result:
                     # User is not admin or admin group does exist. Ciao
                     return render_template("message.html", message=message)
 
-        new_user = username not in userdb
+
         if request.method == "GET":
             return render_template("user.html", username=username, new=new_user)
         else:

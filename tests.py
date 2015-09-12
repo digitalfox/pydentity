@@ -78,9 +78,12 @@ class BasicTestCase(unittest.TestCase):
     def test_new_user(self):
         r = self.client.get("/user/xxx", environ_base = { "REMOTE_USER": "xxx" })
         self.assertEqual(r.status_code, 200)
+        self.assertNotIn("Creation of user xxx", r.data)
+        r = self.client.get("/user/xxx", environ_base = { "REMOTE_USER": "user1" })
+        self.assertEqual(r.status_code, 200)
         self.assertNotIn("old_password", r.data)
         self.assertIn("Creation of user xxx", r.data)
-        r = self.client.post("/user/xxx", data = {"new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "xxx" })
+        r = self.client.post("/user/xxx", data = {"new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "user1" })
         self.assertEqual(r.status_code, 200)
         self.assertIn("User created", r.data)
         with htpasswd.Basic(self.passwd, mode="md5") as userdb:
