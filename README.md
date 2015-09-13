@@ -8,10 +8,8 @@ Current features are:
 - change your password by providing the previous one
 - change other people password when you belongs the a specified admin group
 - create new users
-- check password strength. Note that it is not configurable yet (Upper case, lower case and numeric with a length > 8) and
-only check at browser level. Any properly crafted POST or just old browser that don't understand HTML validation can
- workaround those restrictions
- - redirect to custom page (given as args in url ex. /user/user1?return_to=/myapp/) after successful password change or user creation
+- check password strength. The requirements pattern can be changed in conf. Default is upper case, lower case and numeric with a length > 8). It is checked at browser *and* server level
+- redirect to custom page (given as args in url ex. /user/user1?return_to=/myapp/) after successful password change or user creation
 - change user groups belonging
 - handle authentication through http basic authentication (of course)
 

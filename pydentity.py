@@ -7,6 +7,7 @@ Mini application to manage apache htpasswd file
 
 import subprocess
 from os.path import dirname, join
+from re import match
 
 from flask import Flask, render_template, request, redirect, url_for
 import htpasswd
@@ -70,18 +71,19 @@ def user(username):
                 return render_template("message.html", message="Password differ. Please hit back and try again")
             if ask_old_password and not check_password(userdb.new_users[username], request.form["old_password"]):
                 return render_template("message.html", message="password does not match")
+            if not match(CONF["PASSWORD_PATTERN"], request.form["new_password"]):
+                return render_template("message.html", message="new password does not match requirements (%s" % CONF["PASSWORD_PATTERN_HELP"])
+            # Ok, ready to change password or create user
+            if new_user:
+                userdb.add(username, request.form["new_password"])
+                message = "User created"
             else:
-                # Ok, ready to change password or create user
-                if new_user:
-                    userdb.add(username, request.form["new_password"])
-                    message = "User created"
-                else:
-                    userdb.change_password(username, request.form["new_password"])
-                    message = "Password changed"
-                if request.args.get("return_to"):
-                    return redirect(request.args.get("return_to"))
-                else:
-                    return render_template("message.html", message=message, success=True)
+                userdb.change_password(username, request.form["new_password"])
+                message = "Password changed"
+            if request.args.get("return_to"):
+                return redirect(request.args.get("return_to"))
+            else:
+                return render_template("message.html", message=message, success=True)
 
 
 @app.route("/user_groups/<username>", methods=["POST", "GET"])

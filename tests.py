@@ -58,7 +58,7 @@ class BasicTestCase(unittest.TestCase):
 
 
     def test_redirect_after_pwd_change(self):
-        r = self.client.post("/user/user2?return_to=/lala", data = {"old_password": "user2", "new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "user2" })
+        r = self.client.post("/user/user2?return_to=/lala", data = {"old_password": "user2", "new_password": "New12345", "repeat_password":"New12345"}, environ_base = { "REMOTE_USER": "user2" })
         self.assertEqual(r.status_code, 302)
         self.assertIn("/lala", r.location)
 
@@ -69,10 +69,10 @@ class BasicTestCase(unittest.TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertIn("Change password for user %s" % user, r.data)
             self.assertIn("old_password", r.data)
-            r = self.client.post("/user/%s" % user, data = {"old_password": "%s" % user, "new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "%s" % user })
+            r = self.client.post("/user/%s" % user, data = {"old_password": "%s" % user, "new_password": "New12345", "repeat_password":"New12345"}, environ_base = { "REMOTE_USER": "%s" % user })
             self.assertEqual(r.status_code, 200)
             self.assertIn("Password changed", r.data)
-            r = self.client.post("/user/%s" % user, data = {"old_password": "new", "new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "%s" % user })
+            r = self.client.post("/user/%s" % user, data = {"old_password": "New12345", "new_password": "New12345678", "repeat_password":"New12345678"}, environ_base = { "REMOTE_USER": "%s" % user })
             self.assertEqual(r.status_code, 200)
             self.assertIn("Password changed", r.data)
 
@@ -86,7 +86,7 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertNotIn("old_password", r.data)
         self.assertIn("Creation of user xxx", r.data)
-        r = self.client.post("/user/xxx", data = {"new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "user1" })
+        r = self.client.post("/user/xxx", data = {"new_password": "New12345", "repeat_password":"New12345"}, environ_base = { "REMOTE_USER": "user1" })
         self.assertEqual(r.status_code, 200)
         self.assertIn("User created", r.data)
         with htpasswd.Basic(self.passwd, mode="md5") as userdb:
@@ -98,7 +98,7 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIn("Change password for user user2", r.data)
         self.assertNotIn("Old password", r.data)
-        r = self.client.post("/user/user2", data = {"new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "user1" })
+        r = self.client.post("/user/user2", data = {"new_password": "New12345", "repeat_password":"New12345"}, environ_base = { "REMOTE_USER": "user1" })
         self.assertEqual(r.status_code, 200)
         self.assertIn("Password changed", r.data)
 
@@ -107,19 +107,20 @@ class BasicTestCase(unittest.TestCase):
         r = self.client.get("/user/user1", environ_base = { "REMOTE_USER": "user2" })
         self.assertEqual(r.status_code, 200)
         self.assertIn("Sorry, you must belongs to group", r.data)
-        r = self.client.post("/user/user1", data = {"new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "user2" })
+        r = self.client.post("/user/user1", data = {"new_password": "New12345", "repeat_password":"New12345"}, environ_base = { "REMOTE_USER": "user2" })
         self.assertEqual(r.status_code, 200)
         self.assertIn("Sorry, you must belongs to group", r.data)
 
 
     def test_bad_passwd_change(self):
-        for data in [
-            {"old_password": "XXXXX", "new_password": "new", "repeat_password":"new"},
-            {"old_password": "user2", "new_password": "XXX", "repeat_password":"new"},
-            {"old_password": "user2", "new_password": "new", "repeat_password":"XXX"},]:
+        for data, error_message in [
+            ({"old_password": "XXXXX", "new_password": "New12345", "repeat_password":"New12345"}, "password does not match"),
+            ({"old_password": "user2", "new_password": "New12345", "repeat_password":"New12345678"}, "Password differ"),
+            ({"old_password": "user2", "new_password": "new", "repeat_password":"new"},"password does not match requirement")]:
             r = self.client.post("/user/user2", data = data, environ_base = { "REMOTE_USER": "user2" })
             self.assertEqual(r.status_code, 200)
             self.assertNotIn("Password changed", r.data)
+            self.assertIn(error_message, r.data)
 
 
     def test_add_group(self):
