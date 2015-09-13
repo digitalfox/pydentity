@@ -44,6 +44,9 @@ def user(username):
     with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
         new_user = username not in userdb
         admin, admin_error_message = check_user_is_admin(request.environ.get('REMOTE_USER'))
+        ask_old_password = True
+        if admin and request.environ.get('REMOTE_USER') != username:
+            ask_old_password = False
         if CONF["REQUIRE_REMOTE_USER"]:
             if not request.environ.get('REMOTE_USER'):
                 return render_template("message.html", message="Sorry, you must be logged with http basic auth to go here")
@@ -55,12 +58,12 @@ def user(username):
                     return render_template("message.html", message=admin_error_message)
 
         if request.method == "GET":
-            return render_template("user.html", username=username, new=new_user, admin=admin)
+            return render_template("user.html", username=username, new=new_user, ask_old_password=ask_old_password)
         else:
             # POST Request
             if request.form["new_password"] != request.form["repeat_password"]:
                 return render_template("message.html", message="Password differ. Please hit back and try again")
-            if not (new_user or admin) and not check_password(userdb.new_users[username], request.form["old_password"]):
+            if ask_old_password and not check_password(userdb.new_users[username], request.form["old_password"]):
                 return render_template("message.html", message="password does not match")
             else:
                 # Ok, ready to change password or create user
