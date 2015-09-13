@@ -64,15 +64,17 @@ class BasicTestCase(unittest.TestCase):
 
 
     def test_change_my_passwd(self):
-        r = self.client.get("/user/user2", environ_base = { "REMOTE_USER": "user2" })
-        self.assertEqual(r.status_code, 200)
-        self.assertIn("Change password for user user2", r.data)
-        r = self.client.post("/user/user2", data = {"old_password": "user2", "new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "user2" })
-        self.assertEqual(r.status_code, 200)
-        self.assertIn("Password changed", r.data)
-        r = self.client.post("/user/user2", data = {"old_password": "new", "new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "user2" })
-        self.assertEqual(r.status_code, 200)
-        self.assertIn("Password changed", r.data)
+        for user in ("user1", "user2"):
+            r = self.client.get("/user/%s" % user, environ_base = { "REMOTE_USER": "%s" % user })
+            self.assertEqual(r.status_code, 200)
+            self.assertIn("Change password for user %s" % user, r.data)
+            r = self.client.post("/user/%s" % user, data = {"old_password": "%s" % user, "new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "%s" % user })
+            self.assertEqual(r.status_code, 200)
+            self.assertIn("Password changed", r.data)
+            r = self.client.post("/user/%s" % user, data = {"old_password": "new", "new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "%s" % user })
+            self.assertEqual(r.status_code, 200)
+            self.assertIn("Password changed", r.data)
+
 
 
     def test_new_user(self):
@@ -94,7 +96,8 @@ class BasicTestCase(unittest.TestCase):
         r = self.client.get("/user/user2", environ_base = { "REMOTE_USER": "user1" })
         self.assertEqual(r.status_code, 200)
         self.assertIn("Change password for user user2", r.data)
-        r = self.client.post("/user/user2", data = {"old_password": "user2", "new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "user1" })
+        self.assertNotIn("Old password", r.data)
+        r = self.client.post("/user/user2", data = {"new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "user1" })
         self.assertEqual(r.status_code, 200)
         self.assertIn("Password changed", r.data)
 
@@ -103,7 +106,7 @@ class BasicTestCase(unittest.TestCase):
         r = self.client.get("/user/user1", environ_base = { "REMOTE_USER": "user2" })
         self.assertEqual(r.status_code, 200)
         self.assertIn("Sorry, you must belongs to group", r.data)
-        r = self.client.post("/user/user1", data = {"old_password": "user1", "new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "user2" })
+        r = self.client.post("/user/user1", data = {"new_password": "new", "repeat_password":"new"}, environ_base = { "REMOTE_USER": "user2" })
         self.assertEqual(r.status_code, 200)
         self.assertIn("Sorry, you must belongs to group", r.data)
 

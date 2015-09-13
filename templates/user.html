@@ -14,7 +14,7 @@
         {% endif %}
         <div class="row">
             <div class="form-group col-md-12">
-              {% if not new %}
+              {% if not new and not admin %}
                 <label class="col-md-6 control-label" for="old_password">Old password</label>
                 <div class="col-md-6">
                     <input id="old_password" name="old_password" type="password" required pattern="\w+" placeholder="" class="form-control input-md">

@@ -19,7 +19,6 @@ Caveats, limitations, so far:
 
 - only md5 password hash are supported. Of course crypt password will never be. Blowfish could be supported one day
 - only support http authentication. But frankly, if you want to manage htpasswd file you should have that don't you ?
-- no way to reset password without previous one (like email or secret question for example)
 - no group creation, user can be added or removed from existing groups only
 
 # How it works ?
