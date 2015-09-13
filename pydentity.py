@@ -21,7 +21,11 @@ CONF = {
     # Name of the admin group..User need to belong to this group to be able to change other user password or create new user. REQUIRE_REMOTE_USER parameter is required
     "ADMIN_GROUP" : "admin",
     # Whether to require http basic auth upstream (for example with apache)
-    "REQUIRE_REMOTE_USER": True
+    "REQUIRE_REMOTE_USER": True,
+    # New password pattern regexp check. Note that this regexp must be compliant to both Python regexp syntax and HTML 5 form pattern syntax
+    "PASSWORD_PATTERN": "(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}",
+    # Clear text that explain to user the password requirements
+    "PASSWORD_PATTERN_HELP" : "Upper and lower case, numeric. At least 8 char",
 }
 
 
@@ -58,7 +62,8 @@ def user(username):
                     return render_template("message.html", message=admin_error_message)
 
         if request.method == "GET":
-            return render_template("user.html", username=username, new=new_user, ask_old_password=ask_old_password)
+            return render_template("user.html", username=username, new=new_user, ask_old_password=ask_old_password,
+                                   password_pattern=CONF["PASSWORD_PATTERN"])
         else:
             # POST Request
             if request.form["new_password"] != request.form["repeat_password"]:
@@ -82,8 +87,8 @@ def user(username):
 @app.route("/user_groups/<username>", methods=["POST", "GET"])
 def user_groups(username):
 
-    result, message = check_user_is_admin(request.environ.get('REMOTE_USER'))
-    if not result:
+    admin, message = check_user_is_admin(request.environ.get('REMOTE_USER'))
+    if not admin:
         # User is not admin or admin group does exist. Ciao
         return render_template("message.html", message=message)
 
