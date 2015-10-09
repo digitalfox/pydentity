@@ -33,10 +33,12 @@ CONF = {
 @app.route("/")
 def home():
     if request.environ.get('REMOTE_USER'):
-        return redirect(url_for("user", username=request.environ.get('REMOTE_USER')))
+        url = url_for("user", username=request.environ.get('REMOTE_USER'))
+        if "return_to" in request.args:
+            url += "?return_to=%s" % request.args.get("return_to")
     else:
-        return redirect(url_for("list_users"))
-
+        url = url_for("list_users")
+    return redirect(url)
 
 @app.route("/list_users")
 def list_users():

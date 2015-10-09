@@ -55,6 +55,9 @@ class BasicTestCase(unittest.TestCase):
         r = self.client.get("/", environ_base = { "REMOTE_USER": "user42" })
         self.assertEqual(r.status_code, 302)
         self.assertIn("/user/user42", r.location)
+        r = self.client.get("/?return_to=/lala", environ_base = { "REMOTE_USER": "user42" })
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/user/user42?return_to=/lala", r.location)
 
 
     def test_redirect_after_pwd_change(self):
