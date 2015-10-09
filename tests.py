@@ -75,6 +75,12 @@ class BasicTestCase(unittest.TestCase):
             r = self.client.post("/user/%s" % user, data = {"old_password": "New12345", "new_password": "New12345678", "repeat_password":"New12345678"}, environ_base = { "REMOTE_USER": "%s" % user })
             self.assertEqual(r.status_code, 200)
             self.assertIn("Password changed", r.data)
+            r = self.client.post("/user/%s" % user, data = {"old_password": "New12345678", "new_password": "new123456!", "repeat_password":"new123456!"}, environ_base = { "REMOTE_USER": "%s" % user })
+            self.assertEqual(r.status_code, 200)
+            self.assertIn("Password changed", r.data)
+            r = self.client.post("/user/%s" % user, data = {"old_password": "new123456!", "new_password": "New!123456", "repeat_password":"New!123456"}, environ_base = { "REMOTE_USER": "%s" % user })
+            self.assertEqual(r.status_code, 200)
+            self.assertIn("Password changed", r.data)
 
 
 
