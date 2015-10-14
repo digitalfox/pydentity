@@ -26,7 +26,7 @@ CONF = {
     # New password pattern regexp check. Note that this regexp must be compliant to both Python regexp syntax and HTML 5 form pattern syntax
     "PASSWORD_PATTERN": "(?=.*\d)(?=.*[a-z])(?=.*[A-Z\!\@\#\$\%\^\&\*\-]).{8,}",
     # Clear text that explain to user the password requirements
-    "PASSWORD_PATTERN_HELP" : "Upper and lower case, numeric. At least 8 char",
+    "PASSWORD_PATTERN_HELP" : "Lower case, numeric and upper case or special char. At least 8 char",
 }
 
 
