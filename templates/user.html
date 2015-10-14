@@ -22,7 +22,7 @@
               {% endif %}
               <label class="col-md-6 control-label" for="new_password">New password</label>
               <div class="col-md-6">
-                <input id="new_password" name="new_password" type="password" required pattern="{{ password_pattern }}" onchange="form.repeat_password.pattern = this.value;" title="Upper and lower case, numeric. At least 8 char" placeholder="{{ password_pattern_help }}" class="form-control input-md" >
+                <input id="new_password" name="new_password" type="password" required pattern="{{ password_pattern }}" onchange="form.repeat_password.pattern = (this.value+'').replace(/[.?*+^$[\]\\(){}|-]/g, '\\$&');" title="Lower case, numeric, and at least one upper case or special character in !, @, #, $, %, ^, & *, -. At least 8 char." placeholder="{{ password_pattern_help }}" class="form-control input-md" >
               </div>
               <label class="col-md-6 control-label" for="repeat_password">Repeat your new password</label>
               <div class="col-md-6">
