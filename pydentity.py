@@ -108,17 +108,17 @@ def user_groups(username):
                 return render_template("groups.html", groups=groups)
             else:
                 # POST Request
-                print request.form.items()
-                checked_groups = [g.split("_", 1)[1] for g in request.form.keys() if g.startswith("group_")]
-                print checked_groups
+                print(list(request.form.items()))
+                checked_groups = [g.split("_", 1)[1] for g in list(request.form.keys()) if g.startswith("group_")]
+                print(checked_groups)
                 for group in groupdb.groups:
                     if group in checked_groups:
                         if not groupdb.is_user_in(username, group):
-                            print "add user to group %s" % group
+                            print("add user to group %s" % group)
                             groupdb.add_user(username, group)
                     else:
                         if groupdb.is_user_in(username, group):
-                            print "remove user from group %s" % group
+                            print("remove user from group %s" % group)
                             groupdb.delete_user(username, group)
                 return render_template("message.html", message="User groups changed", success=True)
 
