@@ -14,7 +14,7 @@
         {% endif %}
         <div class="row">
             <div class="form-group col-md-12">
-              {% if ask_old_password %}
+              {% if not admin_feature %}
                 <label class="col-md-6 control-label" for="old_password">Old password</label>
                 <div class="col-md-6">
                     <input id="old_password" name="old_password" type="password" required pattern=".+" placeholder="" class="form-control input-md">
@@ -40,6 +40,15 @@
         </div>
     </fieldset>
 </form>
+    {% if admin_feature %}
+    <form method="POST" action="" novalidate>
+        <div class="col-md-6">
+            <button id="generaterandom" name="generaterandom"
+                    class="btn btn-primary">Generate random password
+            </button>
+        </div>
+    </form>
+    {% endif %}
 </div>
 </div>
  </div>

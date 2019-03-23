@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="containter">
+    <div class="col-lg-6 col-lg-offset-3">
+        <div class="row">
+            <form class="form-horizontal centered" method="POST" action=""
+                  onsubmit="return confirm('Ceci va créer ou modifier les utilisateurs avec des mots de passe générés aléatoirement, confirmer ?');">
+                <fieldset class="batch-user-creation">
+
+                    <legend>Create a batch of users with random password</legend>
+                    <div class="row">
+                        <div class="batch-user-group col-md-12">
+                            <label class="col-md-4 control-label">
+                                List of user login to create, separate by a new line
+                            </label>
+                            <textarea class="col-md-8" id="users_login" name="users_login"></textarea>
+                        </div>
+                        <div class="form-group row col-md-12">
+                            {% for group in groups %}
+                            <label class="col-md-6 control-label" for="group_{{ group }}">{{ group }}</label>
+                            <div class="col-md-6">
+                                <input id="group_{{ group }}" name="group_{{ group }}" type="checkbox"
+                                       class="form-control input-md">
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-md-12">
+                            <div class="col-md-6">
+                                <button id="singlebutton" name="singlebutton" class="btn btn-primary">
+                                    Create with random password
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+            </form>
+            {% if result %}
+            <div>
+                <textarea>{{ result }}</textarea>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

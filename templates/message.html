@@ -12,5 +12,8 @@
     {% if not success %}
         <em>Go back to previous page and try to fix this issue (if you can)</em>
     {% endif %}
+    {% if result %}
+        <textarea id="result" name="result" class="col-md-12">{{ result }}</textarea>
+    {% endif %}
 </div>
 {% endblock %}
