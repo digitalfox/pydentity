@@ -183,5 +183,35 @@ class BasicTestCase(unittest.TestCase):
         self.assertIn("Sorry, you must belongs to group", data)
 
 
+    def test_batch_user_creation(self):
+        r = self.client.get("/batch_user_creation", headers={"REMOTE_USER": "user1"})
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.post("/batch_user_creation", data={"users_login": "user13\r\nuser14", "group_users": "on"}, headers={"REMOTE_USER": "user1"})
+        data = r.data.decode()
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Batch of user created with generated passwords", data)
+        with htpasswd.Basic(self.passwd, mode="md5") as userdb:
+            self.assertIn("user13", userdb)
+            self.assertIn("user14", userdb)
+        with htpasswd.Group(self.group) as groupdb:
+            self.assertTrue(groupdb.is_user_in("user13", "users"))
+            self.assertFalse(groupdb.is_user_in("user13", "admin"))
+            self.assertTrue(groupdb.is_user_in("user14", "users"))
+            self.assertFalse(groupdb.is_user_in("user14", "admin"))
+
+
+    def test_batch_user_creation_without_admin(self):
+        r = self.client.get("/batch_user_creation", headers={"REMOTE_USER": "user2"})
+        self.assertEqual(r.status_code, 200)
+        data = r.data.decode()
+        self.assertIn("Sorry, you must belongs to group", data)
+
+        r = self.client.post("/batch_user_creation", data={"group_admin": "on"}, headers={"REMOTE_USER": "user2"})
+        self.assertEqual(r.status_code, 200)
+        data = r.data.decode()
+        self.assertIn("Sorry, you must belongs to group", data)
+
+
 if __name__ == "__main__":
     unittest.main()
