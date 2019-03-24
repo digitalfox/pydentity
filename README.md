@@ -8,7 +8,7 @@ Current features are:
 - change your password by providing the previous one
 - change other people password when you belongs the a specified admin group
 - create new users
-- check password strength. The requirements pattern can be changed in conf. Default is upper case, lower case and numeric with a length > 8). It is checked at browser *and* server level
+- check password strength. The requirements pattern can be changed in conf. Default is lower case, numeric and special char or uppercase with a length > 8). It is checked at browser *and* server level
 - redirect to custom page (given as args in url ex. /user/user1?return_to=/myapp/) after successful password change or user creation
 - change user groups belonging
 - handle authentication through http basic authentication (of course)
@@ -32,6 +32,12 @@ and [mod_wsgi](http://code.google.com/p/modwsgi/), but it should works with othe
 # License
 
 Pydentity is licensed under the [GNU Affero General Public Licence version 3 or newer](http://www.gnu.org/licenses/agpl-3.0.html)
+
+
+# Authors
+
+- Sebastien Renard (sebastien.renard@digitalfox.org): creator, maintainer
+- Fabien Beziaud (fabien.beziaud@gmail.com): extended regexp support and others patches
 
 # Installation
 

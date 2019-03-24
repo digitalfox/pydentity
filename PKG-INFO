@@ -1,10 +1,10 @@
 Metadata-Version: 1.1
 Name: pydentity
-Version: 0.4
+Version: 0.5
 Author: Sebastien Renard
 Author-email: sebastien renard at digitalfox org
 Home-page: https://github.com/digitalfox/pydentity
-Download-url: https://github.com/digitalfox/pydentity/releases/tag/v0.4
+Download-url: https://github.com/digitalfox/pydentity/releases/tag/v0.5
 Summary: Pydentity is a small web application that manage apache password file (htpasswd) with a simple browser.
 License: GNU AGPL v3
 Description: Pydentity is a small web application that manage apache password file (htpasswd) with a simple browser.

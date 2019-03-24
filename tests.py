@@ -19,8 +19,8 @@ class BasicTestCase(unittest.TestCase):
     def setUp(self):
         self.passwd = join(dirname(__name__), "test_password")
         self.group = join(dirname(__name__), "test_group")
-        open(self.passwd, "w")
-        open(self.group, "w")
+        open(self.passwd, "w").close()
+        open(self.group, "w").close()
         with htpasswd.Basic(self.passwd, mode="md5") as userdb:
             userdb.add("user1", "user1")
             userdb.add("user2", "user2")
@@ -70,40 +70,50 @@ class BasicTestCase(unittest.TestCase):
         for user in ("user1", "user2"):
             r = self.client.get("/user/%s" % user, headers={"REMOTE_USER": "%s" % user })
             self.assertEqual(r.status_code, 200)
-            self.assertIn("Change password for user %s" % user, r.data)
-            self.assertIn("old_password", r.data)
+            data = r.data.decode()
+            self.assertIn("Change password for user %s" % user, data)
+            self.assertIn("old_password", data)
             r = self.client.post("/user/%s" % user, data = {"old_password": "%s" % user, "new_password": "New12345", "repeat_password":"New12345"}, headers={"REMOTE_USER": "%s" % user })
             self.assertEqual(r.status_code, 200)
-            self.assertIn("Password changed", r.data)
+            data = r.data.decode()
+            self.assertIn("Password changed", data)
             r = self.client.post("/user/%s" % user, data = {"old_password": "New12345", "new_password": "New12345678", "repeat_password":"New12345678"}, headers={"REMOTE_USER": "%s" % user })
             self.assertEqual(r.status_code, 200)
-            self.assertIn("Password changed", r.data)
+            data = r.data.decode()
+            self.assertIn("Password changed", data)
             r = self.client.post("/user/%s" % user, data = {"old_password": "New12345678", "new_password": "new123456!", "repeat_password":"new123456!"}, headers={"REMOTE_USER": "%s" % user })
             self.assertEqual(r.status_code, 200)
-            self.assertIn("Password changed", r.data)
+            data = r.data.decode()
+            self.assertIn("Password changed", data)
             r = self.client.post("/user/%s" % user, data = {"old_password": "new123456!", "new_password": "New!123456", "repeat_password":"New!123456"}, headers={"REMOTE_USER": "%s" % user })
             self.assertEqual(r.status_code, 200)
-            self.assertIn("Password changed", r.data)
+            data = r.data.decode()
+            self.assertIn("Password changed", data)
             r = self.client.post("/user/%s" % user, data = {"old_password": "New!123456", "new_password": "new$!^-99", "repeat_password":"new$!^-99"}, headers={"REMOTE_USER": "%s" % user })
             self.assertEqual(r.status_code, 200)
-            self.assertIn("Password changed", r.data)
+            data = r.data.decode()
+            self.assertIn("Password changed", data)
             r = self.client.post("/user/%s" % user, data = {"old_password": "new$!^-99", "new_password": "$#!^9NEw@&*-", "repeat_password":"$#!^9NEw@&*-"}, headers={"REMOTE_USER": "%s" % user })
             self.assertEqual(r.status_code, 200)
-            self.assertIn("Password changed", r.data)
+            data = r.data.decode()
+            self.assertIn("Password changed", data)
 
 
 
     def test_new_user(self):
         r = self.client.get("/user/xxx", headers={"REMOTE_USER": "xxx" })
         self.assertEqual(r.status_code, 200)
-        self.assertNotIn("Creation of user xxx", r.data)
+        data = r.data.decode()
+        self.assertNotIn("Creation of user xxx", data)
         r = self.client.get("/user/xxx", headers={"REMOTE_USER": "user1"})
         self.assertEqual(r.status_code, 200)
-        self.assertNotIn("old_password", r.data)
-        self.assertIn("Creation of user xxx", r.data)
+        data = r.data.decode()
+        self.assertNotIn("old_password", data)
+        self.assertIn("Creation of user xxx", data)
         r = self.client.post("/user/xxx", data = {"new_password": "New12345", "repeat_password":"New12345"}, headers={"REMOTE_USER": "user1"})
         self.assertEqual(r.status_code, 200)
-        self.assertIn("User created", r.data)
+        data = r.data.decode()
+        self.assertIn("User created", data)
         with htpasswd.Basic(self.passwd, mode="md5") as userdb:
             self.assertIn("xxx", userdb)
 
@@ -111,20 +121,24 @@ class BasicTestCase(unittest.TestCase):
     def test_change_someone_else_pwd_as_admin(self):
         r = self.client.get("/user/user2", headers={"REMOTE_USER": "user1"})
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Change password for user user2", r.data)
-        self.assertNotIn("Old password", r.data)
+        data = r.data.decode()
+        self.assertIn("Change password for user user2", data)
+        self.assertNotIn("Old password", data)
         r = self.client.post("/user/user2", data = {"new_password": "New12345", "repeat_password":"New12345"}, headers={"REMOTE_USER": "user1"})
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Password changed", r.data)
+        data = r.data.decode()
+        self.assertIn("Password changed", data)
 
 
     def test_change_someone_else_pwd_as_nobody(self):
         r = self.client.get("/user/user1", headers={"REMOTE_USER": "user2"})
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Sorry, you must belongs to group", r.data)
+        data = r.data.decode()
+        self.assertIn("Sorry, you must belongs to group", data)
         r = self.client.post("/user/user1", data = {"new_password": "New12345", "repeat_password":"New12345"}, headers={"REMOTE_USER": "user2"})
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Sorry, you must belongs to group", r.data)
+        data = r.data.decode()
+        self.assertIn("Sorry, you must belongs to group", data)
 
 
     def test_bad_passwd_change(self):
@@ -134,15 +148,17 @@ class BasicTestCase(unittest.TestCase):
             ({"old_password": "user2", "new_password": "new", "repeat_password":"new"},"password does not match requirement")]:
             r = self.client.post("/user/user2", data = data, headers={"REMOTE_USER": "user2"})
             self.assertEqual(r.status_code, 200)
-            self.assertNotIn("Password changed", r.data)
-            self.assertIn(error_message, r.data)
+            data = r.data.decode()
+            self.assertNotIn("Password changed", data)
+            self.assertIn(error_message, data)
 
 
     def test_add_group(self):
         r = self.client.get("/user_groups/user1", headers={"REMOTE_USER": "user1"})
         self.assertEqual(r.status_code, 200)
+        data = r.data.decode()
         for group in ("users", "admin"):
-            self.assertIn('''name="group_%s" type="checkbox" checked''' % group, r.data)
+            self.assertIn('''name="group_%s" type="checkbox" checked''' % group, data)
 
         with htpasswd.Group(self.group) as groupdb:
             self.assertTrue(groupdb.is_user_in("user1", "users"))
@@ -158,11 +174,13 @@ class BasicTestCase(unittest.TestCase):
     def test_change_group_without_admin(self):
         r = self.client.get("/user_groups/user2", headers={"REMOTE_USER": "user2"})
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Sorry, you must belongs to group", r.data)
+        data = r.data.decode()
+        self.assertIn("Sorry, you must belongs to group", data)
 
         r = self.client.post("/user_groups/user2", data = {"group_admin": "on"}, headers={"REMOTE_USER": "user2"})
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Sorry, you must belongs to group", r.data)
+        data = r.data.decode()
+        self.assertIn("Sorry, you must belongs to group", data)
 
 
 if __name__ == "__main__":

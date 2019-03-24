@@ -27,7 +27,7 @@ CONF = {
     # New password pattern regexp check. Note that this regexp must be compliant to both Python regexp syntax and HTML 5 form pattern syntax
     "PASSWORD_PATTERN": "(?=.*\d)(?=.*[a-z])(?=.*[A-Z\!\@\#\$\%\^\&\*\-\+\;\?\.\!\_\=\(\)\[\]\{\}]).{8,}",
     # Clear text that explain to user the password requirements
-    "PASSWORD_PATTERN_HELP" : "Upper and lower case, numeric. At least 8 char",
+    "PASSWORD_PATTERN_HELP" : "Lower case, numeric and upper case or special char. At least 8 char",
     # List of used chars for password generation
     "PASSWORD_GENERATION_CHARS": "abcdefghijklmnopqrstuvwxyz01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*-+;?.!_=()[]{}"
 }
@@ -140,7 +140,7 @@ def user_groups(username):
                 return render_template("groups.html", groups=groups)
             else:
                 # POST Request
-                checked_groups = [g.split("_", 1)[1] for g in request.form.keys() if g.startswith("group_")]
+                checked_groups = [g.split("_", 1)[1] for g in list(request.form.keys()) if g.startswith("group_")]
                 for group in groupdb.groups:
                     if group in checked_groups:
                         if not groupdb.is_user_in(username, group):
@@ -173,7 +173,7 @@ def batch_user_creation():
             else:
                 # POST Request
                 users = request.form["users_login"].split("\r\n")
-                checked_groups = [g.split("_", 1)[1] for g in request.form.keys() if g.startswith("group_")]
+                checked_groups = [g.split("_", 1)[1] for g in list(request.form.keys()) if g.startswith("group_")]
                 result = []
                 for username in users:
                     new_password = generate_random_password()
