@@ -35,12 +35,14 @@ CONF = {
 
 @app.route("/")
 def home():
-    if "REMOTE_USER" in request.headers:
-        url = url_for("user", username=request.headers["REMOTE_USER"])
-        if "return_to" in request.args:
-            url += "?return_to=%s" % request.args.get("return_to")
-    else:
-        url = url_for("list_users")
+    if not request.remote_user:
+        # No REMOTE_USER header, can't work
+        message = "Can't work without REMOTE_USER header, contact an administrator"
+        return render_template("message.html", success=False, message=message)
+
+    url = url_for("user", username=request.remote_user)
+    if "return_to" in request.args:
+        url += "?return_to=%s" % request.args.get("return_to")
     return redirect(url)
 
 @app.route("/list_users")
@@ -52,21 +54,17 @@ def list_users():
 @app.route("/user/<username>", methods=["POST", "GET"])
 def user(username):
     with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
+
         new_user = username not in userdb
-        if "REMOTE_USER" in request.headers:
-            admin, admin_error_message = check_user_is_admin(request.headers["REMOTE_USER"])
-        else:
-            # No REMOTE_USER header, can't work
-            message = "Can't work without REMOTE_USER header, contact an administrator"
-            return render_template("message.html", success=False, message=message)
+        admin, admin_error_message = check_user_is_admin(request.remote_user)
         admin_feature = False
-        if admin and request.headers["REMOTE_USER"] != username:
+        if admin and request.remote_user != username:
             admin_feature = True
 
         if CONF["REQUIRE_REMOTE_USER"]:
-            if not request.headers["REMOTE_USER"]:
+            if not request.remote_user:
                 return render_template("message.html", message="Sorry, you must be logged with http basic auth to go here")
-            if request.headers["REMOTE_USER"] != username or new_user:
+            if request.remote_user != username or new_user:
                 # User trying to change someone else password
 
                 if not admin:
@@ -119,15 +117,10 @@ def user(username):
 
 @app.route("/user_groups/<username>", methods=["POST", "GET"])
 def user_groups(username):
-    if "REMOTE_USER" in request.headers:
-        admin, message = check_user_is_admin(request.headers["REMOTE_USER"])
-        if not admin:
-            # User is not admin or admin group does exist. Ciao
-            return render_template("message.html", message=message)
-    else:
-        # No REMOTE_USER header, can't work
-        message="Can't work without REMOTE_USER header, contact an administrator"
-        return render_template("message.html", success=False, message=message)
+    admin, message = check_user_is_admin(request.remote_user)
+    if not admin:
+        # User is not admin or admin group does exist. Ciao
+        return render_template("message.html", message=message)
 
     with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
         with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
@@ -154,15 +147,12 @@ def user_groups(username):
 
 @app.route("/batch_user_creation", methods=["POST", "GET"])
 def batch_user_creation():
-    if "REMOTE_USER" in request.headers:
-        admin, message = check_user_is_admin(request.headers["REMOTE_USER"])
-        if not admin:
-            # User is not admin or admin group does exist. Ciao
-            return render_template("message.html", message=message)
-    else:
-        # No REMOTE_USER header, can't work
-        message="Can't work without REMOTE_USER header, contact an administrator"
-        return render_template("message.html", success=False, message=message)
+
+    admin, message = check_user_is_admin(request.remote_user)
+    if not admin:
+        # User is not admin or admin group does exist. Ciao
+        return render_template("message.html", message=message)
+
 
     with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
         with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
