@@ -1,0 +1,9 @@
+<USERS>
+{% for username, password, action in result %}
+<USER>
+    <USERNAME>{{ username }}</USERNAME>
+    <PASSWORD>{{ password }}</PASSWORD>
+    <ACTION>{{ action }}</ACTION>
+</USER>
+{% endfor %}
+</USERS>

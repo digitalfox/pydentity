@@ -90,12 +90,13 @@ def user(username):
                         return render_template("message.html", message="Something wrong with password generation. Please try again.")
                 if new_user:
                     userdb.add(username, new_password)
-                    message = "User created with random password: %s" % new_password
-                    return render_template("message.html", message=message, success=True)
+                    result = [(username, new_password, "create")]
+                    message = "User created with random password"
                 else:
                     userdb.change_password(username, new_password)
-                    message = "User password changed with random password: %s" % new_password
-                    return render_template("message.html", message=message, success=True)
+                    result = [(username, new_password, "update")]
+                    message = "User password updated with random password"
+                return render_template("message.html", message=message, success=True, result=render_template("result_template.html", result=result))
             # If the validate button is pressed
             if request.form["new_password"] != request.form["repeat_password"]:
                 return render_template("message.html", message="Password differ. Please hit back and try again")
@@ -201,7 +202,7 @@ def batch_user_creation():
                             if groupdb.is_user_in(username, group):
                                 groupdb.delete_user(username, group)
                 message = "Batch of user created with generated passwords"
-                return render_template("message.html", message=message, success=True, result=result)
+                return render_template("message.html", message=message, success=True, result=render_template("result_template.html", result=result))
 
 
 def check_user_is_admin(user):
