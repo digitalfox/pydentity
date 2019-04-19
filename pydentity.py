@@ -6,6 +6,7 @@ Mini application to manage apache htpasswd file
 """
 
 import subprocess
+import string
 from os.path import dirname, join
 from re import match
 
@@ -18,6 +19,7 @@ app = Flask(__name__)
 
 # Configuration
 CONF = {
+    "PRODUCT_NAME": "My application",
     "PWD_FILE": join(dirname(__file__), "htpasswd"),
     "GROUP_FILE" : join(dirname(__file__), "htgroup"),
     # Name of the admin group..User need to belong to this group to be able to change other user password or create new user. REQUIRE_REMOTE_USER parameter is required
@@ -29,8 +31,17 @@ CONF = {
     # Clear text that explain to user the password requirements
     "PASSWORD_PATTERN_HELP" : "Lower case, numeric and upper case or special char. At least 8 char",
     # List of used chars for password generation
-    "PASSWORD_GENERATION_CHARS": "abcdefghijklmnopqrstuvwxyz01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*-+;?.!_=()[]{}"
+    "PASSWORD_GENERATION_SPECIAL_CHAR": "!@#$%^&*-+;?.!_=()[]{}",
+
+    # Conf for the mailer
+    "ENABLE_MAIL_CAPABILITIES": True,
 }
+
+# Load all module and config for mailing capabilities
+if CONF["ENABLE_MAIL_CAPABILITIES"]:
+    from flask_mail import Mail, Message
+    app.config.from_pyfile("mail_settings.py")
+    mail = None
 
 
 @app.route("/")
@@ -81,13 +92,6 @@ def user(username):
             # If the generate random password is pressed
             if 'generaterandom' in request.form:
                 new_password = generate_random_password()
-                i = 0
-                while not match(CONF["PASSWORD_PATTERN"], new_password):
-                    new_password = generate_random_password()
-                    i += 1
-                    if i > 10:
-                        # To prevent infinite loop
-                        return render_template("message.html", message="Something wrong with password generation. Please try again.")
                 if new_user:
                     userdb.add(username, new_password)
                     result = [(username, new_password, "create")]
@@ -170,7 +174,8 @@ def batch_user_creation():
                 groups = []
                 for group in groupdb.groups:
                     groups.append(group)
-                return render_template("batch_user_creation.html", groups=groups)
+                return render_template("batch_user_creation.html", groups=groups,
+                                       mail_capabilities=CONF["ENABLE_MAIL_CAPABILITIES"])
             else:
                 # POST Request
                 users = request.form["users_login"].split("\r\n")
@@ -178,14 +183,6 @@ def batch_user_creation():
                 result = []
                 for username in users:
                     new_password = generate_random_password()
-                    i = 0
-                    while not match(CONF["PASSWORD_PATTERN"], new_password):
-                        new_password = generate_random_password()
-                        i += 1
-                        if i > 10:
-                            # To prevent infinite loop
-                            return render_template("message.html",
-                                                   message="Something wrong with password generation. Please try again.")
                     new_user = username not in userdb
                     if new_user:
                         userdb.add(username, new_password)
@@ -202,6 +199,12 @@ def batch_user_creation():
                             if groupdb.is_user_in(username, group):
                                 groupdb.delete_user(username, group)
                 message = "Batch of user created with generated passwords"
+
+                # If the "send_mail" checkbox is enabled
+                if request.form.get("send_mail") is not None:
+                    message = "Batch of user created with generated passwords, a mail has been sent to all of them"
+                    send_mail(result, request.form["mail_suffix"], request.form["instance"])
+
                 return render_template("message.html", message=message, success=True, result=render_template("result_template.html", result=result))
 
 
@@ -225,10 +228,39 @@ def check_password(encrypted_passwd, clear_passwd, mode="md5"):
     return encrypted_passwd == new_encrypted_passwd
 
 
-def generate_random_password(length=8):
-    """Generate a random password of the desired length
+def generate_random_password(length=10):
+    """Generate a random password of the desired length, with 1 number, 1 upper case, 1 special char minimum
     @return a generated password of the desired length"""
-    return "".join(random.sample(CONF["PASSWORD_GENERATION_CHARS"], length))
+    number = random.sample(string.digits, 1)
+    lowercase = random.sample(string.ascii_lowercase, 1)
+    uppercase = random.sample(string.ascii_uppercase, 1)
+    specialchar = random.sample(CONF["PASSWORD_GENERATION_SPECIAL_CHAR"], 1)
+    others = random.sample(string.digits + string.ascii_lowercase + string.ascii_uppercase + "!@#$%^&*-+;?.!_=()[]{}", length - 4)
+    bag = number + specialchar + lowercase + uppercase + others
+    random.shuffle(bag)
+    return "".join(bag)
+
+
+def send_mail(result, mail_suffix, instance):
+    """Send a mail to the users with their newly created/updated password"""
+    for username, password, action in result:
+        mail = get_mail()
+        with mail.connect() as conn:
+            user_mail = username
+            if mail_suffix is not None:
+                user_mail = user_mail + mail_suffix
+
+            body = render_template("mail.html", username=username, password=password, action=action,
+                                   produit=CONF["PRODUCT_NAME"], instance=instance)
+            subject = "Votre accès à %s" % CONF["PRODUCT_NAME"]
+
+            message = Message(body=body, subject=subject, recipients=[user_mail])
+            conn.send(message)
+
+
+def get_mail():
+    """@return an instance of the mail class"""
+    return Mail(app)
 
 
 if __name__ == "__main__":

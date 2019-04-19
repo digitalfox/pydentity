@@ -3,3 +3,4 @@ htpasswd
 htgroup
 venv
 *.pyc
+mail_settings.py
