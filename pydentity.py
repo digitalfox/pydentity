@@ -35,12 +35,17 @@ CONF = {
 
     # Conf for the mailer
     "ENABLE_MAIL_CAPABILITIES": True,
+    "MAIL_CONF": "mail_settings.py",
 }
 
 # Load all module and config for mailing capabilities
 if CONF["ENABLE_MAIL_CAPABILITIES"]:
     from flask_mail import Mail, Message
-    app.config.from_pyfile("mail_settings.py")
+    try:
+        app.config.from_pyfile(CONF["MAIL_CONF"])
+    except:
+        print("WARNING: unable to find config file %s. Disabling email capabilities" % CONF["MAIL_CONF"])
+        CONF["ENABLE_MAIL_CAPABILITIES"] = False
     mail = None
 
 

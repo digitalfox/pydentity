@@ -212,11 +212,12 @@ class BasicTestCase(unittest.TestCase):
                                  headers={"REMOTE_USER": "user1"})
             data = r.data.decode()
             self.assertEqual(r.status_code, 200)
-            self.assertIn("Batch of user created with generated passwords, a mail has been sent to all of them", data)
-            self.assertEqual(len(outbox), 2)
-            self.assertIn("Je vous prie de trouver les informations de connexion", outbox[0].body)
-            self.assertEqual(['user18@test.com'], outbox[0].recipients)
-            self.assertEqual(['user19@test.com'], outbox[1].recipients)
+            if CONF["ENABLE_MAIL_CAPABILITIES"]:
+                self.assertIn("Batch of user created with generated passwords, a mail has been sent to all of them", data)
+                self.assertEqual(len(outbox), 2)
+                self.assertIn("Je vous prie de trouver les informations de connexion", outbox[0].body)
+                self.assertEqual(['user18@test.com'], outbox[0].recipients)
+                self.assertEqual(['user19@test.com'], outbox[1].recipients)
 
 
     def test_batch_user_creation_without_admin(self):
