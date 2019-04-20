@@ -209,7 +209,7 @@ class BasicTestCase(unittest.TestCase):
             r = self.client.post("/batch_user_creation",
                                  data={"users_login": "user18\r\nuser19", "group_users": "on",
                                        "send_mail": "on", "mail_suffix": "@test.com", "instance": "myclient"},
-                                 headers={"REMOTE_USER": "user1"})
+                                 environ_base={"REMOTE_USER": "user1"})
             data = r.data.decode()
             self.assertEqual(r.status_code, 200)
             if CONF["ENABLE_MAIL_CAPABILITIES"]:
