@@ -14,6 +14,8 @@ import unittest
 import os
 from os.path import dirname, join
 
+from pydentity import get_mail, generate_random_password
+
 
 class BasicTestCase(unittest.TestCase):
     def setUp(self):
@@ -198,6 +200,25 @@ class BasicTestCase(unittest.TestCase):
             self.assertFalse(groupdb.is_user_in("user14", "admin"))
 
 
+    def test_batch_user_creation_with_mail(self):
+        mail = get_mail()
+        with mail.record_messages() as outbox:
+            r = self.client.get("/batch_user_creation", headers={"REMOTE_USER": "user1"})
+            self.assertEqual(r.status_code, 200)
+
+            r = self.client.post("/batch_user_creation",
+                                 data={"users_login": "user18\r\nuser19", "group_users": "on",
+                                       "send_mail": "on", "mail_suffix": "@test.com", "instance": "myclient"},
+                                 headers={"REMOTE_USER": "user1"})
+            data = r.data.decode()
+            self.assertEqual(r.status_code, 200)
+            self.assertIn("Batch of user created with generated passwords, a mail has been sent to all of them", data)
+            self.assertEqual(len(outbox), 2)
+            self.assertIn("Je vous prie de trouver les informations de connexion", outbox[0].body)
+            self.assertEqual(['user18@test.com'], outbox[0].recipients)
+            self.assertEqual(['user19@test.com'], outbox[1].recipients)
+
+
     def test_batch_user_creation_without_admin(self):
         r = self.client.get("/batch_user_creation", environ_base={"REMOTE_USER": "user2"})
         self.assertEqual(r.status_code, 200)
@@ -208,6 +229,14 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         data = r.data.decode()
         self.assertIn("Sorry, you must belongs to group", data)
+
+
+    def test_generate_password(self):
+        password = generate_random_password()
+        self.assertRegex(password, CONF["PASSWORD_PATTERN"])
+        password = generate_random_password(11)
+        self.assertRegex(password, CONF["PASSWORD_PATTERN"])
+        self.assertEqual(len(password), 11)
 
 
 if __name__ == "__main__":
