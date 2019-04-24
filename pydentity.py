@@ -235,7 +235,7 @@ def generate_random_password(length=10):
     lowercase = random.sample(string.ascii_lowercase, 1)
     uppercase = random.sample(string.ascii_uppercase, 1)
     specialchar = random.sample(CONF["PASSWORD_GENERATION_SPECIAL_CHAR"], 1)
-    others = random.sample(string.digits + string.ascii_lowercase + string.ascii_uppercase + "!@#$%^&*-+;?.!_=()[]{}", length - 4)
+    others = random.sample(string.digits + string.ascii_lowercase + string.ascii_uppercase + "!@#$%^&*+;?.!_=()[]{}", length - 4)
     bag = number + specialchar + lowercase + uppercase + others
     random.shuffle(bag)
     return "".join(bag)
