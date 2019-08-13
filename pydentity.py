@@ -51,12 +51,12 @@ if CONF["ENABLE_MAIL_CAPABILITIES"]:
 
 @app.route("/")
 def home():
-    if not request.remote_user:
+    if not get_remote_user(request):
         # No REMOTE_USER header, can't work
         message = "Can't work without REMOTE_USER header, contact an administrator"
         return render_template("message.html", success=False, message=message)
 
-    url = url_for("user", username=request.remote_user)
+    url = url_for("user", username=get_remote_user(request))
     if "return_to" in request.args:
         url += "?return_to=%s" % request.args.get("return_to")
     return redirect(url)
@@ -72,15 +72,15 @@ def user(username):
     with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
 
         new_user = username not in userdb
-        admin, admin_error_message = check_user_is_admin(request.remote_user)
+        admin, admin_error_message = check_user_is_admin(get_remote_user(request))
         admin_feature = False
-        if admin and request.remote_user != username:
+        if admin and get_remote_user(request) != username:
             admin_feature = True
 
         if CONF["REQUIRE_REMOTE_USER"]:
-            if not request.remote_user:
+            if not get_remote_user(request):
                 return render_template("message.html", message="Sorry, you must be logged with http basic auth to go here")
-            if request.remote_user != username or new_user:
+            if get_remote_user(request) != username or new_user:
                 # User trying to change someone else password
 
                 if not admin:
@@ -126,7 +126,7 @@ def user(username):
 
 @app.route("/user_groups/<username>", methods=["POST", "GET"])
 def user_groups(username):
-    admin, message = check_user_is_admin(request.remote_user)
+    admin, message = check_user_is_admin(get_remote_user(request))
     if not admin:
         # User is not admin or admin group does exist. Ciao
         return render_template("message.html", message=message)
@@ -157,7 +157,7 @@ def user_groups(username):
 @app.route("/batch_user_creation", methods=["POST", "GET"])
 def batch_user_creation():
 
-    admin, message = check_user_is_admin(request.remote_user)
+    admin, message = check_user_is_admin(get_remote_user(request))
     if not admin:
         # User is not admin or admin group does exist. Ciao
         return render_template("message.html", message=message)
@@ -257,6 +257,14 @@ def get_mail():
     """@return an instance of the mail class"""
     return Mail(app)
 
+def get_remote_user(request):
+    """uniform way to get remote user. flask/werkzeurg default is sensitive to - / _ and case..."""
+    if request.remote_user:
+        return request.remote_user
+    elif request.headers.get("Remote-User"):
+        return request.headers["Remote-User"]
+    else:
+        return None
 
 if __name__ == "__main__":
     app.debug = True
