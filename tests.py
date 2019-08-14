@@ -42,55 +42,55 @@ class BasicTestCase(unittest.TestCase):
 
 
     def test_ok_pages(self):
-        for page in ("/user/user1", "user/user1", "/list_users", "/user_groups/user1"):
-            r = self.client.get(page)
+        for page in ("/user/user1", "/list_users", "/user_groups/user1"):
+            r = self.client.get(CONF["URL_PREFIX"]+page)
             self.assertEqual(r.status_code, 200)
 
 
     def test_redirect_auth_user_to_its_page(self):
-        r = self.client.get("/", environ_base={"REMOTE_USER": "user42"})
+        r = self.client.get(CONF["URL_PREFIX"]+"/", environ_base={"REMOTE_USER": "user42"})
         self.assertEqual(r.status_code, 302)
         self.assertIn("/user/user42", r.location)
-        r = self.client.get("/?return_to=/lala", environ_base={"REMOTE_USER": "user42"})
+        r = self.client.get(CONF["URL_PREFIX"]+"/?return_to=/lala", environ_base={"REMOTE_USER": "user42"})
         self.assertEqual(r.status_code, 302)
         self.assertIn("/user/user42?return_to=/lala", r.location)
 
 
     def test_redirect_after_pwd_change(self):
-        r = self.client.post("/user/user2?return_to=/lala", data = {"old_password": "user2", "new_password": "New12345", "repeat_password":"New12345"}, environ_base={"REMOTE_USER": "user2"})
+        r = self.client.post(CONF["URL_PREFIX"]+"/user/user2?return_to=/lala", data = {"old_password": "user2", "new_password": "New12345", "repeat_password":"New12345"}, environ_base={"REMOTE_USER": "user2"})
         self.assertEqual(r.status_code, 302)
         self.assertIn("/lala", r.location)
 
 
     def test_change_my_passwd(self):
         for user in ("user1", "user2"):
-            r = self.client.get("/user/%s" % user, environ_base={"REMOTE_USER": "%s" % user })
+            r = self.client.get(CONF["URL_PREFIX"]+"/user/%s" % user, environ_base={"REMOTE_USER": "%s" % user })
             self.assertEqual(r.status_code, 200)
             data = r.data.decode()
             self.assertIn("Change password for user %s" % user, data)
             self.assertIn("old_password", data)
             self.assertNotIn("generaterandom", data)
-            r = self.client.post("/user/%s" % user, data = {"old_password": "%s" % user, "new_password": "New12345", "repeat_password":"New12345"}, environ_base={"REMOTE_USER": "%s" % user })
+            r = self.client.post(CONF["URL_PREFIX"]+"/user/%s" % user, data = {"old_password": "%s" % user, "new_password": "New12345", "repeat_password":"New12345"}, environ_base={"REMOTE_USER": "%s" % user })
             self.assertEqual(r.status_code, 200)
             data = r.data.decode()
             self.assertIn("Password changed", data)
-            r = self.client.post("/user/%s" % user, data = {"old_password": "New12345", "new_password": "New12345678", "repeat_password":"New12345678"}, environ_base={"REMOTE_USER": "%s" % user })
+            r = self.client.post(CONF["URL_PREFIX"]+"/user/%s" % user, data = {"old_password": "New12345", "new_password": "New12345678", "repeat_password":"New12345678"}, environ_base={"REMOTE_USER": "%s" % user })
             self.assertEqual(r.status_code, 200)
             data = r.data.decode()
             self.assertIn("Password changed", data)
-            r = self.client.post("/user/%s" % user, data = {"old_password": "New12345678", "new_password": "new123456!", "repeat_password":"new123456!"}, environ_base={"REMOTE_USER": "%s" % user })
+            r = self.client.post(CONF["URL_PREFIX"]+"/user/%s" % user, data = {"old_password": "New12345678", "new_password": "new123456!", "repeat_password":"new123456!"}, environ_base={"REMOTE_USER": "%s" % user })
             self.assertEqual(r.status_code, 200)
             data = r.data.decode()
             self.assertIn("Password changed", data)
-            r = self.client.post("/user/%s" % user, data = {"old_password": "new123456!", "new_password": "New!123456", "repeat_password":"New!123456"}, environ_base={"REMOTE_USER": "%s" % user })
+            r = self.client.post(CONF["URL_PREFIX"]+"/user/%s" % user, data = {"old_password": "new123456!", "new_password": "New!123456", "repeat_password":"New!123456"}, environ_base={"REMOTE_USER": "%s" % user })
             self.assertEqual(r.status_code, 200)
             data = r.data.decode()
             self.assertIn("Password changed", data)
-            r = self.client.post("/user/%s" % user, data = {"old_password": "New!123456", "new_password": "new$!^-99", "repeat_password":"new$!^-99"}, environ_base={"REMOTE_USER": "%s" % user })
+            r = self.client.post(CONF["URL_PREFIX"]+"/user/%s" % user, data = {"old_password": "New!123456", "new_password": "new$!^-99", "repeat_password":"new$!^-99"}, environ_base={"REMOTE_USER": "%s" % user })
             self.assertEqual(r.status_code, 200)
             data = r.data.decode()
             self.assertIn("Password changed", data)
-            r = self.client.post("/user/%s" % user, data = {"old_password": "new$!^-99", "new_password": "$#!^9NEw@&*-", "repeat_password":"$#!^9NEw@&*-"}, environ_base={"REMOTE_USER": "%s" % user })
+            r = self.client.post(CONF["URL_PREFIX"]+"/user/%s" % user, data = {"old_password": "new$!^-99", "new_password": "$#!^9NEw@&*-", "repeat_password":"$#!^9NEw@&*-"}, environ_base={"REMOTE_USER": "%s" % user })
             self.assertEqual(r.status_code, 200)
             data = r.data.decode()
             self.assertIn("Password changed", data)
@@ -98,17 +98,17 @@ class BasicTestCase(unittest.TestCase):
 
 
     def test_new_user(self):
-        r = self.client.get("/user/xxx", environ_base={"REMOTE_USER": "xxx" })
+        r = self.client.get(CONF["URL_PREFIX"]+"/user/xxx", environ_base={"REMOTE_USER": "xxx" })
         self.assertEqual(r.status_code, 200)
         data = r.data.decode()
         self.assertNotIn("Creation of user xxx", data)
-        r = self.client.get("/user/xxx", environ_base={"REMOTE_USER": "user1"})
+        r = self.client.get(CONF["URL_PREFIX"]+"/user/xxx", environ_base={"REMOTE_USER": "user1"})
         self.assertEqual(r.status_code, 200)
         data = r.data.decode()
         self.assertNotIn("old_password", data)
         self.assertIn("Creation of user xxx", data)
         self.assertIn("generaterandom", data)
-        r = self.client.post("/user/xxx", data = {"new_password": "New12345", "repeat_password":"New12345"}, environ_base={"REMOTE_USER": "user1"})
+        r = self.client.post(CONF["URL_PREFIX"]+"/user/xxx", data = {"new_password": "New12345", "repeat_password":"New12345"}, environ_base={"REMOTE_USER": "user1"})
         self.assertEqual(r.status_code, 200)
         data = r.data.decode()
         self.assertIn("User created", data)
@@ -117,24 +117,24 @@ class BasicTestCase(unittest.TestCase):
 
 
     def test_change_someone_else_pwd_as_admin(self):
-        r = self.client.get("/user/user2", environ_base={"REMOTE_USER": "user1"})
+        r = self.client.get(CONF["URL_PREFIX"]+"/user/user2", environ_base={"REMOTE_USER": "user1"})
         self.assertEqual(r.status_code, 200)
         data = r.data.decode()
         self.assertIn("Change password for user user2", data)
         self.assertIn("Generate random password", data)
         self.assertNotIn("Old password", data)
-        r = self.client.post("/user/user2", data = {"new_password": "New12345", "repeat_password":"New12345"}, environ_base={"REMOTE_USER": "user1"})
+        r = self.client.post(CONF["URL_PREFIX"]+"/user/user2", data = {"new_password": "New12345", "repeat_password":"New12345"}, environ_base={"REMOTE_USER": "user1"})
         self.assertEqual(r.status_code, 200)
         data = r.data.decode()
         self.assertIn("Password changed", data)
 
 
     def test_change_someone_else_pwd_as_nobody(self):
-        r = self.client.get("/user/user1", environ_base={"REMOTE_USER": "user2"})
+        r = self.client.get(CONF["URL_PREFIX"]+"/user/user1", environ_base={"REMOTE_USER": "user2"})
         self.assertEqual(r.status_code, 200)
         data = r.data.decode()
         self.assertIn("Sorry, you must belongs to group", data)
-        r = self.client.post("/user/user1", data = {"new_password": "New12345", "repeat_password":"New12345"}, environ_base={"REMOTE_USER": "user2"})
+        r = self.client.post(CONF["URL_PREFIX"]+"/user/user1", data = {"new_password": "New12345", "repeat_password":"New12345"}, environ_base={"REMOTE_USER": "user2"})
         self.assertEqual(r.status_code, 200)
         data = r.data.decode()
         self.assertIn("Sorry, you must belongs to group", data)
@@ -145,7 +145,7 @@ class BasicTestCase(unittest.TestCase):
             ({"old_password": "XXXXX", "new_password": "New12345", "repeat_password":"New12345"}, "password does not match"),
             ({"old_password": "user2", "new_password": "New12345", "repeat_password":"New12345678"}, "Password differ"),
             ({"old_password": "user2", "new_password": "new", "repeat_password":"new"},"password does not match requirement")]:
-            r = self.client.post("/user/user2", data = data, environ_base={"REMOTE_USER": "user2"})
+            r = self.client.post(CONF["URL_PREFIX"]+"/user/user2", data = data, environ_base={"REMOTE_USER": "user2"})
             self.assertEqual(r.status_code, 200)
             data = r.data.decode()
             self.assertNotIn("Password changed", data)
@@ -153,7 +153,7 @@ class BasicTestCase(unittest.TestCase):
 
 
     def test_add_group(self):
-        r = self.client.get("/user_groups/user1", environ_base={"REMOTE_USER": "user1"})
+        r = self.client.get(CONF["URL_PREFIX"]+"/user_groups/user1", environ_base={"REMOTE_USER": "user1"})
         self.assertEqual(r.status_code, 200)
         data = r.data.decode()
         for group in ("users", "admin"):
@@ -162,7 +162,7 @@ class BasicTestCase(unittest.TestCase):
         with htpasswd.Group(self.group) as groupdb:
             self.assertTrue(groupdb.is_user_in("user1", "users"))
 
-        r = self.client.post("/user_groups/user1", data = {"group_admin": "on"}, environ_base={"REMOTE_USER": "user1"})
+        r = self.client.post(CONF["URL_PREFIX"]+"/user_groups/user1", data = {"group_admin": "on"}, environ_base={"REMOTE_USER": "user1"})
 
         with htpasswd.Group(self.group) as groupdb:
             self.assertEqual(r.status_code, 200)
@@ -171,22 +171,22 @@ class BasicTestCase(unittest.TestCase):
 
 
     def test_change_group_without_admin(self):
-        r = self.client.get("/user_groups/user2", environ_base={"REMOTE_USER": "user2"})
+        r = self.client.get(CONF["URL_PREFIX"]+"/user_groups/user2", environ_base={"REMOTE_USER": "user2"})
         self.assertEqual(r.status_code, 200)
         data = r.data.decode()
         self.assertIn("Sorry, you must belongs to group", data)
 
-        r = self.client.post("/user_groups/user2", data = {"group_admin": "on"}, environ_base={"REMOTE_USER": "user2"})
+        r = self.client.post(CONF["URL_PREFIX"]+"/user_groups/user2", data = {"group_admin": "on"}, environ_base={"REMOTE_USER": "user2"})
         self.assertEqual(r.status_code, 200)
         data = r.data.decode()
         self.assertIn("Sorry, you must belongs to group", data)
 
 
     def test_batch_user_creation(self):
-        r = self.client.get("/batch_user_creation", environ_base={"REMOTE_USER": "user1"})
+        r = self.client.get(CONF["URL_PREFIX"]+"/batch_user_creation", environ_base={"REMOTE_USER": "user1"})
         self.assertEqual(r.status_code, 200)
 
-        r = self.client.post("/batch_user_creation", data={"users_login": "user13\r\nuser14", "group_users": "on"}, environ_base={"REMOTE_USER": "user1"})
+        r = self.client.post(CONF["URL_PREFIX"]+"/batch_user_creation", data={"users_login": "user13\r\nuser14", "group_users": "on"}, environ_base={"REMOTE_USER": "user1"})
         data = r.data.decode()
         self.assertEqual(r.status_code, 200)
         self.assertIn("Batch of user created with generated passwords", data)
@@ -203,10 +203,10 @@ class BasicTestCase(unittest.TestCase):
     def test_batch_user_creation_with_mail(self):
         mail = get_mail()
         with mail.record_messages() as outbox:
-            r = self.client.get("/batch_user_creation", headers={"REMOTE_USER": "user1"})
+            r = self.client.get(CONF["URL_PREFIX"]+"/batch_user_creation", headers={"REMOTE_USER": "user1"})
             self.assertEqual(r.status_code, 200)
 
-            r = self.client.post("/batch_user_creation",
+            r = self.client.post(CONF["URL_PREFIX"]+"/batch_user_creation",
                                  data={"users_login": "user18\r\nuser19", "group_users": "on",
                                        "send_mail": "on", "mail_suffix": "@test.com", "instance": "myclient"},
                                  environ_base={"REMOTE_USER": "user1"})
@@ -221,12 +221,12 @@ class BasicTestCase(unittest.TestCase):
 
 
     def test_batch_user_creation_without_admin(self):
-        r = self.client.get("/batch_user_creation", environ_base={"REMOTE_USER": "user2"})
+        r = self.client.get(CONF["URL_PREFIX"]+"/batch_user_creation", environ_base={"REMOTE_USER": "user2"})
         self.assertEqual(r.status_code, 200)
         data = r.data.decode()
         self.assertIn("Sorry, you must belongs to group", data)
 
-        r = self.client.post("/batch_user_creation", data={"group_admin": "on"}, environ_base={"REMOTE_USER": "user2"})
+        r = self.client.post(CONF["URL_PREFIX"]+"/batch_user_creation", data={"group_admin": "on"}, environ_base={"REMOTE_USER": "user2"})
         self.assertEqual(r.status_code, 200)
         data = r.data.decode()
         self.assertIn("Sorry, you must belongs to group", data)

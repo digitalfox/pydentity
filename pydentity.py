@@ -36,6 +36,10 @@ CONF = {
     # Conf for the mailer
     "ENABLE_MAIL_CAPABILITIES": True,
     "MAIL_CONF": "mail_settings.py",
+
+    # Deployment prefix - useful when behind reverse proxy
+    # Don't put trailing slash. For no prefix, use an empty string
+    "URL_PREFIX": "",
 }
 
 # Load all module and config for mailing capabilities
@@ -49,7 +53,7 @@ if CONF["ENABLE_MAIL_CAPABILITIES"]:
     mail = None
 
 
-@app.route("/")
+@app.route(CONF["URL_PREFIX"]+"/")
 def home():
     if not get_remote_user(request):
         # No REMOTE_USER header, can't work
@@ -61,13 +65,13 @@ def home():
         url += "?return_to=%s" % request.args.get("return_to")
     return redirect(url)
 
-@app.route("/list_users")
+@app.route(CONF["URL_PREFIX"]+"/list_users")
 def list_users():
     with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
         return render_template("list.html", users=userdb.users)
 
 
-@app.route("/user/<username>", methods=["POST", "GET"])
+@app.route(CONF["URL_PREFIX"]+"/user/<username>", methods=["POST", "GET"])
 def user(username):
     with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
 
@@ -124,7 +128,7 @@ def user(username):
                 return render_template("message.html", message=message, success=True)
 
 
-@app.route("/user_groups/<username>", methods=["POST", "GET"])
+@app.route(CONF["URL_PREFIX"]+"/user_groups/<username>", methods=["POST", "GET"])
 def user_groups(username):
     admin, message = check_user_is_admin(get_remote_user(request))
     if not admin:
@@ -154,7 +158,7 @@ def user_groups(username):
                 return render_template("message.html", message="User groups changed", success=True)
 
 
-@app.route("/batch_user_creation", methods=["POST", "GET"])
+@app.route(CONF["URL_PREFIX"]+"/batch_user_creation", methods=["POST", "GET"])
 def batch_user_creation():
 
     admin, message = check_user_is_admin(get_remote_user(request))
