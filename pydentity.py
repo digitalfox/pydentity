@@ -41,6 +41,8 @@ CONF = {
     # Don't put trailing slash. For no prefix, use an empty string
     "URL_PREFIX": "",
 }
+app.config["PYDENTITY_URL_PREFIX"] = CONF["URL_PREFIX"]
+
 
 # Load all module and config for mailing capabilities
 if CONF["ENABLE_MAIL_CAPABILITIES"]:
