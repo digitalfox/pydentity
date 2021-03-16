@@ -1,20 +1,19 @@
 {% extends "base.html" %}
+{% set active_page = "user" %}
+
 {% block body %}
-<div class="containter">
-<div class="col-lg-6 col-lg-offset-3">
-<div class="row">&nbsp;</div>
-<div class="row">
+
+{% if new %}
+<h1>Creation of user {{ username }}</h1>
+{% else %}
+<h1>Change password for user {{ username }}</h1>
+{% endif %}
+
 <form class="form-horizontal centered" method="POST" action="">
     <fieldset class="change-password">
-
-        {% if new %}
-            <legend>Creation of user {{ username }}</legend>
-        {% else %}
-            <legend>Change password for user {{ username }}</legend>
-        {% endif %}
         <div class="row">
             <div class="form-group col-md-12">
-              {% if not admin_feature %}
+              {% if not is_admin or own_user %}
                 <label class="col-md-6 control-label" for="old_password">Old password</label>
                 <div class="col-md-6">
                     <input id="old_password" name="old_password" type="password" required pattern=".+" placeholder="" class="form-control input-md">
@@ -40,7 +39,7 @@
         </div>
     </fieldset>
 </form>
-    {% if admin_feature %}
+    {% if is_admin and not own_user %}
     <form method="POST" action="" novalidate>
         <div class="col-md-6">
             <button id="generaterandom" name="generaterandom"
@@ -49,7 +48,4 @@
         </div>
     </form>
     {% endif %}
-</div>
-</div>
- </div>
 {% endblock %}

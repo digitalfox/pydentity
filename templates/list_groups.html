@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% set active_page = "list_groups" %}
+
+{% block body %}
+<h1>Group list</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">Group</th>
+        </tr>
+    </thead>
+    <tbody>
+
+        {% for group in groups %}
+        <tr>
+            <th scope="row">{{ group }}</th>
+        </tr>
+        {% endfor %}
+
+    </tbody>
+
+</table>
+{% endblock %}
