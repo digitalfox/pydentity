@@ -106,9 +106,6 @@ def user(username):
 
         new_user = username not in userdb
         is_admin, admin_error_message = check_user_is_admin(get_remote_user(request))
-        own_user = False
-        if get_remote_user(request) == username:
-            own_user = True
 
         if CONF["REQUIRE_REMOTE_USER"]:
             if not get_remote_user(request):
@@ -122,14 +119,23 @@ def user(username):
                     # User is not admin or admin group does exist. Ciao
                     return render_template("message.html", message=admin_error_message)
 
+        with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
+            groups = dict()
+            for group in groupdb.groups:
+                if groupdb.is_user_in(username, group):
+                    groups[group] = True
+                else:
+                    groups[group] = False
+
         if request.method == "GET":
             return render_template(
                 "user.html",
                 username=username,
                 new=new_user,
-                own_user=own_user,
                 is_admin=is_admin,
+                groups=groups,
                 password_pattern=CONF["PASSWORD_PATTERN"],
+                password_pattern_help=CONF["PASSWORD_PATTERN_HELP"],
             )
         else:
             # POST Request
@@ -145,24 +151,43 @@ def user(username):
                     result = [(username, new_password, "update")]
                     message = "User password updated with random password"
                 return render_template(
-                    "message.html",
-                    message=message,
+                    "user.html",
+                    username=username,
+                    new=new_user,
                     is_admin=is_admin,
+                    groups=groups,
+                    password_pattern=CONF["PASSWORD_PATTERN"],
+                    password_pattern_help=CONF["PASSWORD_PATTERN_HELP"],
+                    message=message,
                     success=True,
                     result=render_template("result_template.html", result=result),
                 )
             # If the validate button is pressed
             if request.form["new_password"] != request.form["repeat_password"]:
                 return render_template(
-                    "message.html", is_admin=is_admin, message="Passwords differ. Please hit back and try again"
+                    "user.html",
+                    username=username,
+                    new=new_user,
+                    is_admin=is_admin,
+                    groups=groups,
+                    password_pattern=CONF["PASSWORD_PATTERN"],
+                    password_pattern_help=CONF["PASSWORD_PATTERN_HELP"],
+                    message="Passwords differ. Please hit back and try again",
+                    success=False,
                 )
             if not is_admin and not check_password(userdb.new_users[username], request.form["old_password"]):
                 return render_template("message.html", is_admin=is_admin, message="Old password does not match")
             if not match(CONF["PASSWORD_PATTERN"], request.form["new_password"]):
                 return render_template(
-                    "message.html",
+                    "user.html",
+                    username=username,
+                    new=new_user,
                     is_admin=is_admin,
+                    groups=groups,
+                    password_pattern=CONF["PASSWORD_PATTERN"],
+                    password_pattern_help=CONF["PASSWORD_PATTERN_HELP"],
                     message="New password does not match requirements (%s" % CONF["PASSWORD_PATTERN_HELP"],
+                    success=False,
                 )
             # Ok, ready to change password or create user
             if new_user:
@@ -174,7 +199,17 @@ def user(username):
             if request.args.get("return_to"):
                 return redirect(request.args.get("return_to"))
             else:
-                return render_template("message.html", is_admin=is_admin, message=message, success=True)
+                return render_template(
+                    "user.html",
+                    username=username,
+                    new=new_user,
+                    is_admin=is_admin,
+                    groups=groups,
+                    password_pattern=CONF["PASSWORD_PATTERN"],
+                    password_pattern_help=CONF["PASSWORD_PATTERN_HELP"],
+                    message=message,
+                    success=True,
+                )
 
 
 @app.route(CONF["URL_PREFIX"] + "/user_groups", methods=["POST", "GET"])
