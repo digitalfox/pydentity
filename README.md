@@ -48,7 +48,7 @@ Prerequisites:
 - openssl command line
 
 Just drop the code where you want in a place that your webserver can read. You are advised to create a dedicated python
-virtual environment to install python third party libs, but it's up to you ! the pydentity.wsgi file is setup with a
+virtual environment to install python third party libs, but it's up to you! The pydentity.wsgi file is setup with a
 virtual env named "venv" at the root code level. If you don't use virtual env, comment this line, else, adapt it 
 to you virtual env location. Install python requirements with this simple line:
  
@@ -84,3 +84,18 @@ Here's the parameters you may want to tune:
     GROUP_FILE: Full path the group file to manage. Default to <pydentity dir>/htgroup
     ADMIN_GROUP: Name of the admin group. Default to "admin". User need to belong to this group to be able to change other user password or create new users. REQUIRE_REMOTE_USER parameter is required
     REQUIRE_REMOTE_USER: Whether to require http basic auth upstream (for example with apache). Default to True. If False, everyone is able to change anyone password if the correct previous one is provided.
+
+# Development configuration
+
+We encourage you to use a Python Virtual Environment such as [virtualenv](https://docs.python.org/3/tutorial/venv.html)
+or [pipenv](https://pypi.org/project/pipenv/).
+
+Install python requirements with this simple line:
+
+    pip install -r requirement
+
+Then you can simply use the Flask dev server for development:
+
+    export FLASK_APP=hello.py
+    export FLASK_ENV=development
+    flask run
