@@ -9,9 +9,22 @@
     {% endif %}
 
         {{ message }}
-        <hr class="col-md-12" />
-        {% if is_admin and result %}
-            <textarea class="col-md-8 centered">{{ result }}</textarea>
+        {% if is_admin and message_details %}
+            <br />
+            <i>{{ message_details }}</i>
+        {% endif %}
+    </div>
+{% endif %}
+
+{% if message_groups %}
+    {% if success %}<div class="alert alert-success">
+    {% else %}<div class="alert alert-danger">
+    {% endif %}
+
+        {{ message_groups }}
+        {% if is_admin and message_groups_details %}
+            <br />
+            <i>{{ message_groups_details }}</i>
         {% endif %}
     </div>
 {% endif %}
@@ -35,7 +48,7 @@
         <div class="form-group">
             <label class="control-label">New password</label>
             <input id="new_password" name="new_password" type="password" class="form-control"
-                   required pattern="{{ password_pattern }}"
+                   pattern="{{ password_pattern }}"
                    onchange="form.repeat_password.pattern = (this.value+'').replace(/[.?*+^$[\]\\(){}|-]/g, '\\$&');"
                    title="Lower case, numeric, and at least one upper case or special character in !, @, #, $, %, ^, & *, -. At least 8 char."
                    placeholder="{{ password_pattern_help }}" />
@@ -43,13 +56,13 @@
         <div class="form-group">
             <label>Repeat your new password</label>
             <input id="repeat_password" name="repeat_password" class="form-control"
-                   type="password" required=""
+                   type="password"
                    placeholder="Be smart, don't copy and paste. Retype it"
                    title="Password does not match your new password" />
         </div>
         {% if is_admin %}
         <div class="form-group">
-            <input id="generaterandom" name="generaterandom" type="checkbox" />
+            <input id="generaterandom" name="generaterandom" type="checkbox" onchange="form.new_password.disabled = !form.new_password.disabled; form.repeat_password.disabled = !form.repeat_password.disabled;" />
             <label>Generate random password</label>
         </div>
         {% endif %}
@@ -57,13 +70,24 @@
     {% if is_admin %}
         <fieldset class="col-md-6">
             <h3>Groups</h3>
-            {% for group, active in groups.items() %}
-                <div class="form-group">
-                    <label>{{ group }}</label>
-                    <input id="group_{{ group }}" name="group_{{ group }}"
-                           type="checkbox" {% if active %}checked{% endif %} />
-                </div>
-            {% endfor %}
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col">Group</th>
+                        <th scope="col">Is user in group?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for group, active in groups.items() %}
+                        <tr>
+                            <td>{{ group }}</td>
+                            <td>
+                                <input id="group_{{ group }}" name="group_{{ group }}" type="checkbox" {% if active %}checked{% endif %} />
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </fieldset>
     {% endif %}
     <hr class="col-md-12" />

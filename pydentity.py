@@ -114,7 +114,6 @@ def user(username):
                 )
             if get_remote_user(request) != username or new_user:
                 # User trying to change someone else password
-
                 if not is_admin:
                     # User is not admin or admin group does exist. Ciao
                     return render_template("message.html", message=admin_error_message)
@@ -139,63 +138,85 @@ def user(username):
             )
         else:
             # POST Request
-            # If the generate random password is pressed
-            if "generaterandom" in request.form:
-                new_password = generate_random_password()
+            success = True
+            message = ""
+            message_details = ""
+
+            if (
+                "generaterandom" in request.form
+                or request.form["new_password"] != ""
+                or request.form["repeat_password"] != ""
+            ):
+                # Then the user wanted to generate a new password (chosen or random)
+
+                # All failure conditions
+                if "generaterandom" not in request.form:
+                    if request.form["new_password"] != request.form["repeat_password"]:
+                        message = "Passwords differ. Please try again"
+                        success = False
+                    if not match(CONF["PASSWORD_PATTERN"], request.form["new_password"]):
+                        message = "New password does not match requirements (%s)" % CONF["PASSWORD_PATTERN_HELP"]
+                        success = False
+                    if not is_admin and not check_password(userdb.new_users[username], request.form["old_password"]):
+                        message = "Old password does not match"
+                        success = False
+                    if request.form["new_password"] == "":
+                        message = "New password it required. Please try again."
+                        success = False
+                    if request.form["repeat_password"] == "":
+                        message = "Repeated password it required. Please try again."
+                        success = False
+
+                if success == False:
+                    return render_template(
+                        "user.html",
+                        username=username,
+                        new=new_user,
+                        is_admin=is_admin,
+                        groups=groups,
+                        password_pattern=CONF["PASSWORD_PATTERN"],
+                        password_pattern_help=CONF["PASSWORD_PATTERN_HELP"],
+                        message=message,
+                        success=success,
+                    )
+
+                # If the generate random password is checked
+                if "generaterandom" in request.form:
+                    new_password = generate_random_password()
+                    message_details = "Generated random password is: %s" % new_password
+                else:
+                    new_password = request.form["new_password"]
+                    message_details = "Password set to chosen password"
+
                 if new_user:
                     userdb.add(username, new_password)
-                    result = [(username, new_password, "create")]
                     message = "User created with random password"
                 else:
                     userdb.change_password(username, new_password)
-                    result = [(username, new_password, "update")]
-                    message = "User password updated with random password"
-                return render_template(
-                    "user.html",
-                    username=username,
-                    new=new_user,
-                    is_admin=is_admin,
-                    groups=groups,
-                    password_pattern=CONF["PASSWORD_PATTERN"],
-                    password_pattern_help=CONF["PASSWORD_PATTERN_HELP"],
-                    message=message,
-                    success=True,
-                    result=render_template("result_template.html", result=result),
-                )
-            # If the validate button is pressed
-            if request.form["new_password"] != request.form["repeat_password"]:
-                return render_template(
-                    "user.html",
-                    username=username,
-                    new=new_user,
-                    is_admin=is_admin,
-                    groups=groups,
-                    password_pattern=CONF["PASSWORD_PATTERN"],
-                    password_pattern_help=CONF["PASSWORD_PATTERN_HELP"],
-                    message="Passwords differ. Please hit back and try again",
-                    success=False,
-                )
-            if not is_admin and not check_password(userdb.new_users[username], request.form["old_password"]):
-                return render_template("message.html", is_admin=is_admin, message="Old password does not match")
-            if not match(CONF["PASSWORD_PATTERN"], request.form["new_password"]):
-                return render_template(
-                    "user.html",
-                    username=username,
-                    new=new_user,
-                    is_admin=is_admin,
-                    groups=groups,
-                    password_pattern=CONF["PASSWORD_PATTERN"],
-                    password_pattern_help=CONF["PASSWORD_PATTERN_HELP"],
-                    message="New password does not match requirements (%s" % CONF["PASSWORD_PATTERN_HELP"],
-                    success=False,
-                )
-            # Ok, ready to change password or create user
-            if new_user:
-                userdb.add(username, request.form["new_password"])
-                message = "User created"
-            else:
-                userdb.change_password(username, request.form["new_password"])
-                message = "Password changed"
+                    message = "User password updated"
+
+            # Process groups, only for admin user
+            message_groups = ""
+            message_groups_details = ""
+            if is_admin:
+                with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
+                    checked_groups = [g.split("_", 1)[1] for g in list(request.form.keys()) if g.startswith("group_")]
+                    message_groups_details = ""
+                    for group in groupdb.groups:
+                        if group in checked_groups:
+                            if not groupdb.is_user_in(username, group):
+                                groupdb.add_user(username, group)
+                                groups[group] = True
+                                message_groups_details += "add " + group + ", "
+                        else:
+                            if groupdb.is_user_in(username, group):
+                                groupdb.delete_user(username, group)
+                                groups[group] = False
+                                message_groups_details += "delete " + group + ", "
+                    if message_groups_details:
+                        message_groups = "User groups changed"
+                        message_groups_details = "Changed groups are: " + message_groups_details[:-2]
+
             if request.args.get("return_to"):
                 return redirect(request.args.get("return_to"))
             else:
@@ -208,49 +229,11 @@ def user(username):
                     password_pattern=CONF["PASSWORD_PATTERN"],
                     password_pattern_help=CONF["PASSWORD_PATTERN_HELP"],
                     message=message,
+                    message_details=message_details if message_details else None,
+                    message_groups=message_groups,
+                    message_groups_details=message_groups_details,
                     success=True,
                 )
-
-
-@app.route(CONF["URL_PREFIX"] + "/user_groups", methods=["POST", "GET"])
-def user_groups_entrypoint():
-    """Simple user groups entrypoint to redirect to the correct user groups page"""
-    if CONF["REQUIRE_REMOTE_USER"]:
-        if not get_remote_user(request):
-            return render_template("message.html", message="Sorry, you must be logged with http basic auth to go here")
-        else:
-            url = url_for("user_groups", username=get_remote_user(request))
-            return redirect(url)
-
-
-@app.route(CONF["URL_PREFIX"] + "/user_groups/<username>", methods=["POST", "GET"])
-def user_groups(username):
-    is_admin, message = check_user_is_admin(get_remote_user(request))
-    if not is_admin:
-        # User is not admin or admin group does exist. Ciao
-        return render_template("message.html", message=message)
-
-    with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
-        with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
-            if request.method == "GET":
-                groups = dict()
-                for group in groupdb.groups:
-                    if groupdb.is_user_in(username, group):
-                        groups[group] = True
-                    else:
-                        groups[group] = False
-                return render_template("groups.html", is_admin=is_admin, groups=groups)
-            else:
-                # POST Request
-                checked_groups = [g.split("_", 1)[1] for g in list(request.form.keys()) if g.startswith("group_")]
-                for group in groupdb.groups:
-                    if group in checked_groups:
-                        if not groupdb.is_user_in(username, group):
-                            groupdb.add_user(username, group)
-                    else:
-                        if groupdb.is_user_in(username, group):
-                            groupdb.delete_user(username, group)
-                return render_template("message.html", is_admin=is_admin, message="User groups changed", success=True)
 
 
 @app.route(CONF["URL_PREFIX"] + "/batch_user_creation", methods=["POST", "GET"])

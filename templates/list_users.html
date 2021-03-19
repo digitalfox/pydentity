@@ -8,8 +8,7 @@
     <thead>
         <tr>
             <th scope="col">Login</th>
-            <th scope="col">Change user password</th>
-            <th scope="col">Change user groups</th>
+            <th scope="col">Change user password or groups</th>
         </tr>
     </thead>
     <tbody>
@@ -17,8 +16,7 @@
         {% for user in users %}
         <tr>
             <th scope="row">{{ user }}</th>
-            <td><a href="{{ url_for('user', username=user) }}">Change user password</a></td>
-            <td><a href="{{ url_for('user_groups', username=user) }}">Change user groups</a></td>
+            <td><a href="{{ url_for('user', username=user) }}">Change user password or groups</a></td>
         </tr>
         {% endfor %}
 
