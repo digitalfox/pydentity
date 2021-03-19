@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% set active_page = "group" %}
+
+{% block body %}
+
+{% if message %}
+    <div class="alert alert-success">
+        {{ message }}
+    </div>
+{% endif %}
+
+<h1>Group {{ group }} administration</h1>
+
+<form method="POST" action="">
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">User</th>
+                <th scope="col">Remove from group</th>
+            </tr>
+        </thead>
+        <tbody>
+
+            {% for user in users %}
+            <tr>
+                <td>{{ user }}</th>
+                <td><button name="remove_{{ user }}" type="submit" class="btn btn-danger">
+                    Remove user from group
+                </button></td>
+            </tr>
+            {% endfor %}
+
+        </tbody>
+    </table>
+</form>
+
+<form class="form-inline" method="POST" action="">
+    <label for="select_user">Add a user to the group</label>
+    <select class="form-control mx-sm-3" id="select_user" name="select_user">
+        {% for user in possible_users %}
+            <option value="{{ user }}">{{ user }}</option>
+        {% endfor %}
+    </select>
+    <button name="add_user_to_group" action="submit" class="btn btn-primary">Add the user to the group</button>
+</form>
+
+{% endblock %}

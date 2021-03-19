@@ -81,12 +81,22 @@ def list_users():
 
 @app.route(CONF["URL_PREFIX"] + "/list_groups")
 def list_groups():
-    with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
-        is_admin, admin_error_message = check_user_is_admin(get_remote_user(request))
-        if not is_admin:
-            # User is not admin, can't allow
-            return render_template("message.html", message=admin_error_message)
-        return render_template("list_groups.html", is_admin=is_admin, groups=groupdb.groups)
+    is_admin, admin_error_message = check_user_is_admin(get_remote_user(request))
+    if not is_admin:
+        # User is not admin, can't allow
+        return render_template("message.html", message=admin_error_message)
+
+    with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
+        with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
+            groups = dict()
+            for user in userdb.users:
+                for group in groupdb.groups:
+                    if group not in groups:
+                        groups[group] = []
+                    if groupdb.is_user_in(user, group):
+                        groups[group].append(user)
+
+    return render_template("list_groups.html", is_admin=is_admin, groups=groups)
 
 
 @app.route(CONF["URL_PREFIX"] + "/user", methods=["POST", "GET"])
@@ -234,6 +244,45 @@ def user(username):
                     message_groups_details=message_groups_details,
                     success=True,
                 )
+
+
+@app.route(CONF["URL_PREFIX"] + "/group/<group>", methods=["POST", "GET"])
+def group(group):
+    is_admin, admin_error_message = check_user_is_admin(get_remote_user(request))
+    if not is_admin:
+        # User is not admin, can't allow
+        return render_template("message.html", message=admin_error_message)
+
+    message = ""
+    if request.method == "POST":
+        # If the user clicked the "Remove a user" button
+        user_to_remove = [g.split("_", 1)[1] for g in list(request.form.keys()) if g.startswith("remove_")]
+        if user_to_remove:
+            user_to_remove = user_to_remove[0]
+            with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
+                if groupdb.is_user_in(user_to_remove, group):
+                    groupdb.delete_user(user_to_remove, group)
+                    message = "User %s removed from group %s" % (user_to_remove, group)
+
+        # If the user clicked the "Add a user" button
+        if "add_user_to_group" in request.form:
+            with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
+                groupdb.add_user(request.form["select_user"], group)
+                message = "User %s added to group %s" % (request.form["select_user"], group)
+
+    users = []
+    possible_users = []
+    with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
+        with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
+            for user in userdb.users:
+                if groupdb.is_user_in(user, group):
+                    users.append(user)
+                else:
+                    possible_users.append(user)
+
+    return render_template(
+        "group.html", message=message, is_admin=is_admin, group=group, users=users, possible_users=possible_users
+    )
 
 
 @app.route(CONF["URL_PREFIX"] + "/batch_user_creation", methods=["POST", "GET"])
