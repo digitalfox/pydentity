@@ -74,7 +74,7 @@
                 <thead>
                     <tr>
                         <th scope="col">Group</th>
-                        <th scope="col">Is user in group?</th>
+                        <th scope="col"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -82,7 +82,7 @@
                         <tr>
                             <td>{{ group }}</td>
                             <td>
-                                <input id="group_{{ group }}" name="group_{{ group }}" type="checkbox" {% if active %}checked{% endif %} />
+                                <input id="group_{{ group }}" name="group_{{ group }}" class="form-control" type="checkbox" {% if active %}checked{% endif %} />
                             </td>
                         </tr>
                     {% endfor %}
