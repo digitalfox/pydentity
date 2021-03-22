@@ -21,22 +21,22 @@ app = Flask(__name__)
 CONF = {
     "PRODUCT_NAME": "My application",
     "PWD_FILE": join(dirname(__file__), "htpasswd"),
-    "GROUP_FILE" : join(dirname(__file__), "htgroup"),
-    # Name of the admin group. User need to belong to this group to be able to change other user password or create new user. REQUIRE_REMOTE_USER parameter is required
-    "ADMIN_GROUP" : "admin",
+    "GROUP_FILE": join(dirname(__file__), "htgroup"),
+    # Name of the admin group. User need to belong to this group to be able to change other user password
+    # or create new user. REQUIRE_REMOTE_USER parameter is required
+    "ADMIN_GROUP": "admin",
     # Whether to require http basic auth upstream (for example with apache)
     "REQUIRE_REMOTE_USER": True,
-    # New password pattern regexp check. Note that this regexp must be compliant to both Python regexp syntax and HTML 5 form pattern syntax
+    # New password pattern regexp check. Note that this regexp must be compliant to both Python regexp syntax
+    # and HTML 5 form pattern syntax
     "PASSWORD_PATTERN": "(?=.*\d)(?=.*[a-z])(?=.*[A-Z\!\@\#\$\%\^\&\*\-\+\;\?\.\!\_\=\(\)\[\]\{\}]).{8,}",
     # Clear text that explain to user the password requirements
-    "PASSWORD_PATTERN_HELP" : "Lower case, numeric and upper case or special char. At least 8 char",
+    "PASSWORD_PATTERN_HELP": "Lower case, numeric and upper case or special char. At least 8 char",
     # List of used chars for password generation
     "PASSWORD_GENERATION_SPECIAL_CHAR": "!@#$%^&*+;?.!_=()[]{}",
-
     # Conf for the mailer
     "ENABLE_MAIL_CAPABILITIES": True,
     "MAIL_CONF": "mail_settings.py",
-
     # Deployment prefix - useful when behind reverse proxy
     # Don't put trailing slash. For no prefix, use an empty string
     "URL_PREFIX": "",
@@ -47,6 +47,7 @@ app.config["PYDENTITY_URL_PREFIX"] = CONF["URL_PREFIX"]
 # Load all module and config for mailing capabilities
 if CONF["ENABLE_MAIL_CAPABILITIES"]:
     from flask_mail import Mail, Message
+
     try:
         app.config.from_pyfile(CONF["MAIL_CONF"])
     except:
@@ -55,7 +56,7 @@ if CONF["ENABLE_MAIL_CAPABILITIES"]:
     mail = None
 
 
-@app.route(CONF["URL_PREFIX"]+"/")
+@app.route(CONF["URL_PREFIX"] + "/")
 def home():
     if not get_remote_user(request):
         # No REMOTE_USER header, can't work
@@ -67,107 +68,230 @@ def home():
         url += "?return_to=%s" % request.args.get("return_to")
     return redirect(url)
 
-@app.route(CONF["URL_PREFIX"]+"/list_users")
+
+@app.route(CONF["URL_PREFIX"] + "/list_users")
 def list_users():
     with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
-        return render_template("list.html", users=userdb.users)
+        is_admin, admin_error_message = check_user_is_admin(get_remote_user(request))
+        if not is_admin:
+            # User is not admin, can't allow
+            return render_template("message.html", message=admin_error_message)
+        return render_template("list_users.html", is_admin=is_admin, users=userdb.users)
 
 
-@app.route(CONF["URL_PREFIX"]+"/user/<username>", methods=["POST", "GET"])
+@app.route(CONF["URL_PREFIX"] + "/list_groups")
+def list_groups():
+    is_admin, admin_error_message = check_user_is_admin(get_remote_user(request))
+    if not is_admin:
+        # User is not admin, can't allow
+        return render_template("message.html", message=admin_error_message)
+
+    with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
+        with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
+            groups = dict()
+            for user in userdb.users:
+                for group in groupdb.groups:
+                    if group not in groups:
+                        groups[group] = []
+                    if groupdb.is_user_in(user, group):
+                        groups[group].append(user)
+
+    return render_template("list_groups.html", is_admin=is_admin, groups=groups)
+
+
+@app.route(CONF["URL_PREFIX"] + "/user", methods=["POST", "GET"])
+def user_entrypoint():
+    """Simple user entrypoint to redirect to the correct user page"""
+    if CONF["REQUIRE_REMOTE_USER"]:
+        if not get_remote_user(request):
+            return render_template("message.html", message="Sorry, you must be logged with http basic auth to go here")
+        else:
+            url = url_for("user", username=get_remote_user(request))
+            return redirect(url)
+
+
+@app.route(CONF["URL_PREFIX"] + "/user/<username>", methods=["POST", "GET"])
 def user(username):
     with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
 
         new_user = username not in userdb
-        admin, admin_error_message = check_user_is_admin(get_remote_user(request))
-        admin_feature = False
-        if admin and get_remote_user(request) != username:
-            admin_feature = True
+        is_admin, admin_error_message = check_user_is_admin(get_remote_user(request))
 
         if CONF["REQUIRE_REMOTE_USER"]:
             if not get_remote_user(request):
-                return render_template("message.html", message="Sorry, you must be logged with http basic auth to go here")
+                return render_template(
+                    "message.html", message="Sorry, you must be logged with http basic auth to go here"
+                )
             if get_remote_user(request) != username or new_user:
                 # User trying to change someone else password
-
-                if not admin:
+                if not is_admin:
                     # User is not admin or admin group does exist. Ciao
                     return render_template("message.html", message=admin_error_message)
 
+        with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
+            groups = dict()
+            for group in groupdb.groups:
+                if groupdb.is_user_in(username, group):
+                    groups[group] = True
+                else:
+                    groups[group] = False
+
         if request.method == "GET":
-            return render_template("user.html", username=username, new=new_user, admin_feature=admin_feature,
-                                   password_pattern=CONF["PASSWORD_PATTERN"])
+            return render_template(
+                "user.html",
+                username=username,
+                new=new_user,
+                is_admin=is_admin,
+                groups=groups,
+                password_pattern=CONF["PASSWORD_PATTERN"],
+                password_pattern_help=CONF["PASSWORD_PATTERN_HELP"],
+            )
         else:
             # POST Request
-            # If the generate random password is pressed
-            if 'generaterandom' in request.form:
-                new_password = generate_random_password()
+            success = True
+            message = ""
+            message_details = ""
+
+            if (
+                "generaterandom" in request.form
+                or request.form["new_password"] != ""
+                or request.form["repeat_password"] != ""
+            ):
+                # Then the user wanted to generate a new password (chosen or random)
+
+                # All failure conditions
+                if "generaterandom" not in request.form:
+                    if request.form["new_password"] != request.form["repeat_password"]:
+                        message = "Passwords differ. Please try again"
+                        success = False
+                    if not match(CONF["PASSWORD_PATTERN"], request.form["new_password"]):
+                        message = "New password does not match requirements (%s)" % CONF["PASSWORD_PATTERN_HELP"]
+                        success = False
+                    if not is_admin and not check_password(userdb.new_users[username], request.form["old_password"]):
+                        message = "Old password does not match"
+                        success = False
+                    if request.form["new_password"] == "":
+                        message = "New password it required. Please try again."
+                        success = False
+                    if request.form["repeat_password"] == "":
+                        message = "Repeated password it required. Please try again."
+                        success = False
+
+                if success == False:
+                    return render_template(
+                        "user.html",
+                        username=username,
+                        new=new_user,
+                        is_admin=is_admin,
+                        groups=groups,
+                        password_pattern=CONF["PASSWORD_PATTERN"],
+                        password_pattern_help=CONF["PASSWORD_PATTERN_HELP"],
+                        message=message,
+                        success=success,
+                    )
+
+                # If the generate random password is checked
+                if "generaterandom" in request.form:
+                    new_password = generate_random_password()
+                    message_details = "Generated random password is: %s" % new_password
+                else:
+                    new_password = request.form["new_password"]
+                    message_details = "Password set to chosen password"
+
                 if new_user:
                     userdb.add(username, new_password)
-                    result = [(username, new_password, "create")]
                     message = "User created with random password"
                 else:
                     userdb.change_password(username, new_password)
-                    result = [(username, new_password, "update")]
-                    message = "User password updated with random password"
-                return render_template("message.html", message=message, success=True, result=render_template("result_template.html", result=result))
-            # If the validate button is pressed
-            if request.form["new_password"] != request.form["repeat_password"]:
-                return render_template("message.html", message="Password differ. Please hit back and try again")
-            if not admin_feature and not check_password(userdb.new_users[username], request.form["old_password"]):
-                return render_template("message.html", message="password does not match")
-            if not match(CONF["PASSWORD_PATTERN"], request.form["new_password"]):
-                return render_template("message.html", message="new password does not match requirements (%s" % CONF["PASSWORD_PATTERN_HELP"])
-            # Ok, ready to change password or create user
-            if new_user:
-                userdb.add(username, request.form["new_password"])
-                message = "User created"
-            else:
-                userdb.change_password(username, request.form["new_password"])
-                message = "Password changed"
+                    message = "User password updated"
+
+            # Process groups, only for admin user
+            message_groups = ""
+            message_groups_details = ""
+            if is_admin:
+                with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
+                    checked_groups = [g.split("_", 1)[1] for g in list(request.form.keys()) if g.startswith("group_")]
+                    message_groups_details = ""
+                    for group in groupdb.groups:
+                        if group in checked_groups:
+                            if not groupdb.is_user_in(username, group):
+                                groupdb.add_user(username, group)
+                                groups[group] = True
+                                message_groups_details += "add " + group + ", "
+                        else:
+                            if groupdb.is_user_in(username, group):
+                                groupdb.delete_user(username, group)
+                                groups[group] = False
+                                message_groups_details += "delete " + group + ", "
+                    if message_groups_details:
+                        message_groups = "User groups changed"
+                        message_groups_details = "Changed groups are: " + message_groups_details[:-2]
+
             if request.args.get("return_to"):
                 return redirect(request.args.get("return_to"))
             else:
-                return render_template("message.html", message=message, success=True)
+                return render_template(
+                    "user.html",
+                    username=username,
+                    new=new_user,
+                    is_admin=is_admin,
+                    groups=groups,
+                    password_pattern=CONF["PASSWORD_PATTERN"],
+                    password_pattern_help=CONF["PASSWORD_PATTERN_HELP"],
+                    message=message,
+                    message_details=message_details if message_details else None,
+                    message_groups=message_groups,
+                    message_groups_details=message_groups_details,
+                    success=True,
+                )
 
 
-@app.route(CONF["URL_PREFIX"]+"/user_groups/<username>", methods=["POST", "GET"])
-def user_groups(username):
-    admin, message = check_user_is_admin(get_remote_user(request))
-    if not admin:
-        # User is not admin or admin group does exist. Ciao
-        return render_template("message.html", message=message)
+@app.route(CONF["URL_PREFIX"] + "/group/<group>", methods=["POST", "GET"])
+def group(group):
+    is_admin, admin_error_message = check_user_is_admin(get_remote_user(request))
+    if not is_admin:
+        # User is not admin, can't allow
+        return render_template("message.html", message=admin_error_message)
 
+    message = ""
+    if request.method == "POST":
+        # If the user clicked the "Remove a user" button
+        user_to_remove = [g.split("_", 1)[1] for g in list(request.form.keys()) if g.startswith("remove_")]
+        if user_to_remove:
+            user_to_remove = user_to_remove[0]
+            with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
+                if groupdb.is_user_in(user_to_remove, group):
+                    groupdb.delete_user(user_to_remove, group)
+                    message = "User %s removed from group %s" % (user_to_remove, group)
+
+        # If the user clicked the "Add a user" button
+        if "add_user_to_group" in request.form:
+            with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
+                groupdb.add_user(request.form["select_user"], group)
+                message = "User %s added to group %s" % (request.form["select_user"], group)
+
+    users = []
+    possible_users = []
     with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
         with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
-            if request.method == "GET":
-                groups = dict()
-                for group in groupdb.groups:
-                    if groupdb.is_user_in(username, group):
-                        groups[group] = True
-                    else:
-                        groups[group] = False
-                return render_template("groups.html", groups=groups)
-            else:
-                # POST Request
-                checked_groups = [g.split("_", 1)[1] for g in list(request.form.keys()) if g.startswith("group_")]
-                for group in groupdb.groups:
-                    if group in checked_groups:
-                        if not groupdb.is_user_in(username, group):
-                            groupdb.add_user(username, group)
-                    else:
-                        if groupdb.is_user_in(username, group):
-                            groupdb.delete_user(username, group)
-                return render_template("message.html", message="User groups changed", success=True)
+            for user in userdb.users:
+                if groupdb.is_user_in(user, group):
+                    users.append(user)
+                else:
+                    possible_users.append(user)
+
+    return render_template(
+        "group.html", message=message, is_admin=is_admin, group=group, users=users, possible_users=possible_users
+    )
 
 
-@app.route(CONF["URL_PREFIX"]+"/batch_user_creation", methods=["POST", "GET"])
+@app.route(CONF["URL_PREFIX"] + "/batch_user_creation", methods=["POST", "GET"])
 def batch_user_creation():
 
-    admin, message = check_user_is_admin(get_remote_user(request))
-    if not admin:
+    is_admin, message = check_user_is_admin(get_remote_user(request))
+    if not is_admin:
         # User is not admin or admin group does exist. Ciao
         return render_template("message.html", message=message)
-
 
     with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
         with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
@@ -175,8 +299,12 @@ def batch_user_creation():
                 groups = []
                 for group in groupdb.groups:
                     groups.append(group)
-                return render_template("batch_user_creation.html", groups=groups,
-                                       mail_capabilities=CONF["ENABLE_MAIL_CAPABILITIES"])
+                return render_template(
+                    "batch_user_creation.html",
+                    is_admin=is_admin,
+                    groups=groups,
+                    mail_capabilities=CONF["ENABLE_MAIL_CAPABILITIES"],
+                )
             else:
                 # POST Request
                 users = request.form["users_login"].split("\r\n")
@@ -206,7 +334,12 @@ def batch_user_creation():
                     message = "Batch of user created with generated passwords, a mail has been sent to all of them"
                     send_mail(result, request.form["mail_suffix"], request.form["instance"])
 
-                return render_template("message.html", message=message, success=True, result=render_template("result_template.html", result=result))
+                return render_template(
+                    "message.html",
+                    message=message,
+                    success=True,
+                    result=render_template("result_template.html", is_admin=is_admin, result=result),
+                )
 
 
 def check_user_is_admin(user):
@@ -214,9 +347,16 @@ def check_user_is_admin(user):
     @:return: tuple (result, message), result is True if user is admin, else False. message indicate reason if False"""
     with htpasswd.Group(CONF["GROUP_FILE"]) as groupsdb:
         if CONF["ADMIN_GROUP"] not in groupsdb:
-            return (False, "Sorry admin group '%s' is not defined. You cannot change someone else password or create new user" % CONF["ADMIN_GROUP"])
+            return (
+                False,
+                "Sorry admin group '%s' is not defined. You cannot change someone else password or create new user"
+                % CONF["ADMIN_GROUP"],
+            )
         if not groupsdb.is_user_in(user, CONF["ADMIN_GROUP"]):
-            return (False, "Sorry, you must belongs to group '%s' to change someone else password or create new users" % CONF["ADMIN_GROUP"])
+            return (
+                False,
+                "Forbidden: only admin user allowed",
+            )
         # Everything is fine
         return (True, "")
 
@@ -225,7 +365,9 @@ def check_password(encrypted_passwd, clear_passwd, mode="md5"):
     """check that password is correct against its hash
     TODO: propose to python-htpasswd to integrate this code in his lib"""
     salt = encrypted_passwd.split("$")[2]  # Extract salt from current encrypted password
-    new_encrypted_passwd = subprocess.check_output(["openssl", "passwd", "-apr1", "-salt", salt, clear_passwd]).decode('utf-8')
+    new_encrypted_passwd = subprocess.check_output(["openssl", "passwd", "-apr1", "-salt", salt, clear_passwd]).decode(
+        "utf-8"
+    )
     return encrypted_passwd == new_encrypted_passwd
 
 
@@ -236,7 +378,10 @@ def generate_random_password(length=10):
     lowercase = random.sample(string.ascii_lowercase, 1)
     uppercase = random.sample(string.ascii_uppercase, 1)
     specialchar = random.sample(CONF["PASSWORD_GENERATION_SPECIAL_CHAR"], 1)
-    others = random.sample(string.digits + string.ascii_lowercase + string.ascii_uppercase + CONF["PASSWORD_GENERATION_SPECIAL_CHAR"], length - 4)
+    others = random.sample(
+        string.digits + string.ascii_lowercase + string.ascii_uppercase + CONF["PASSWORD_GENERATION_SPECIAL_CHAR"],
+        length - 4,
+    )
     bag = number + specialchar + lowercase + uppercase + others
     random.shuffle(bag)
     return "".join(bag)
@@ -251,8 +396,14 @@ def send_mail(result, mail_suffix, instance):
             if mail_suffix is not None:
                 user_mail = user_mail + mail_suffix
 
-            body = render_template("mail.html", username=username, password=password, action=action,
-                                   produit=CONF["PRODUCT_NAME"], instance=instance)
+            body = render_template(
+                "mail.html",
+                username=username,
+                password=password,
+                action=action,
+                produit=CONF["PRODUCT_NAME"],
+                instance=instance,
+            )
             subject = "Votre accès à %s" % CONF["PRODUCT_NAME"]
 
             message = Message(body=body, subject=subject, recipients=[user_mail])
@@ -263,6 +414,7 @@ def get_mail():
     """@return an instance of the mail class"""
     return Mail(app)
 
+
 def get_remote_user(request):
     """uniform way to get remote user. flask/werkzeurg default is sensitive to - / _ and case..."""
     if request.remote_user:
@@ -271,6 +423,7 @@ def get_remote_user(request):
         return request.headers["Remote-User"]
     else:
         return None
+
 
 if __name__ == "__main__":
     app.debug = True

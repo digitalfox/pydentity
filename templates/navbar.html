@@ -1,0 +1,24 @@
+<nav class="navbar sticky-top navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="/">Pydentity</a>
+    {% if is_admin %}
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item {% if active_page == "user" %}active{% endif %}">
+                    <a class="nav-link" href="{{ url_for('user_entrypoint') }}">User password & groups</span></a>
+                </li>
+                <li class="nav-item {% if active_page == "list_users" %}active{% endif %}">
+                    <a class="nav-link" href="{{ url_for('list_users') }}">User list</a>
+                </li>
+                <li class="nav-item {% if active_page == "list_groups" %}active{% endif %}">
+                    <a class="nav-link" href="{{ url_for('list_groups') }}">Group list</a>
+                </li>
+                <li class="nav-item {% if active_page == "batch_user_creation" %}active{% endif %}">
+                    <a class="nav-link" href="{{ url_for('batch_user_creation') }}">Batch user creation</a>
+                </li>
+            </ul>
+        </div>
+    {% endif %}
+</nav>

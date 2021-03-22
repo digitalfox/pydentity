@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% set active_page = "list_users" %}
+
+{% block body %}
+<h1>User list</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">Login</th>
+            <th scope="col">Change user password or groups</th>
+        </tr>
+    </thead>
+    <tbody>
+
+        {% for user in users %}
+        <tr>
+            <th scope="row">{{ user }}</th>
+            <td><a href="{{ url_for('user', username=user) }}">Change user password or groups</a></td>
+        </tr>
+        {% endfor %}
+
+    </tbody>
+
+</table>
+{% endblock %}

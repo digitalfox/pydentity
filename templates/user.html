@@ -1,55 +1,114 @@
 {% extends "base.html" %}
-{% block body %}
-<div class="containter">
-<div class="col-lg-6 col-lg-offset-3">
-<div class="row">&nbsp;</div>
-<div class="row">
-<form class="form-horizontal centered" method="POST" action="">
-    <fieldset class="change-password">
+{% set active_page = "user" %}
 
-        {% if new %}
-            <legend>Creation of user {{ username }}</legend>
-        {% else %}
-            <legend>Change password for user {{ username }}</legend>
-        {% endif %}
-        <div class="row">
-            <div class="form-group col-md-12">
-              {% if not admin_feature %}
-                <label class="col-md-6 control-label" for="old_password">Old password</label>
-                <div class="col-md-6">
-                    <input id="old_password" name="old_password" type="password" required pattern=".+" placeholder="" class="form-control input-md">
-                </div>
-              {% endif %}
-              <label class="col-md-6 control-label" for="new_password">New password</label>
-              <div class="col-md-6">
-                <input id="new_password" name="new_password" type="password" required pattern="{{ password_pattern }}" onchange="form.repeat_password.pattern = (this.value+'').replace(/[.?*+^$[\]\\(){}|-]/g, '\\$&');" title="Lower case, numeric, and at least one upper case or special character in !, @, #, $, %, ^, & *, -. At least 8 char." placeholder="{{ password_pattern_help }}" class="form-control input-md" >
-              </div>
-              <label class="col-md-6 control-label" for="repeat_password">Repeat your new password</label>
-              <div class="col-md-6">
-                <input id="repeat_password" name="repeat_password" type="password" placeholder="Be smart, don't copy and paste. Retype it" title="Password does not match your new password" class="form-control input-md" required="">
-              </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="form-group col-md-12">
-              <label class="col-md-6 control-label" for="singlebutton"></label>
-              <div class="col-md-6">
-                <button id="singlebutton" name="singlebutton" class="btn btn-primary">Validate</button>
-              </div>
-            </div>
-        </div>
-    </fieldset>
-</form>
-    {% if admin_feature %}
-    <form method="POST" action="" novalidate>
-        <div class="col-md-6">
-            <button id="generaterandom" name="generaterandom"
-                    class="btn btn-primary">Generate random password
-            </button>
-        </div>
-    </form>
+{% block body %}
+
+{% if message %}
+    {% if success %}<div class="alert alert-success">
+    {% else %}<div class="alert alert-danger">
     {% endif %}
-</div>
-</div>
- </div>
+
+        {{ message }}
+        {% if is_admin and message_details %}
+            <br />
+            <i>{{ message_details }}</i>
+        {% endif %}
+    </div>
+{% endif %}
+
+{% if message_groups %}
+    {% if success %}<div class="alert alert-success">
+    {% else %}<div class="alert alert-danger">
+    {% endif %}
+
+        {{ message_groups }}
+        {% if is_admin and message_groups_details %}
+            <br />
+            <i>{{ message_groups_details }}</i>
+        {% endif %}
+    </div>
+{% endif %}
+
+{% if new %}
+    <h1>Creation of user {{ username }}</h1>
+{% else %}
+    <h1>Update of user {{ username }}</h1>
+{% endif %}
+
+<form class="row" method="POST" action="">
+    <fieldset class="{% if is_admin %}col-md-6{% else %}col-md-12{% endif %}">
+        <h3>Password</h3>
+        {% if not is_admin %}
+            <div class="form-group">
+                <label class="control-label" for="old_password">Old password</label>
+                <input id="old_password" name="old_password" type="password" required pattern=".+" 
+                       placeholder="Old password" class="form-control" />
+            </div>
+        {% endif %}
+        <div class="form-group">
+            <label class="control-label">New password</label>
+            <input id="new_password" name="new_password" type="password" class="form-control"
+                   pattern="{{ password_pattern }}"
+                   onchange="form.repeat_password.pattern = (this.value+'').replace(/[.?*+^$[\]\\(){}|-]/g, '\\$&');"
+                   title="Lower case, numeric, and at least one upper case or special character in !, @, #, $, %, ^, & *, -. At least 8 char."
+                   placeholder="{{ password_pattern_help }}" />
+        </div>
+        <div class="form-group">
+            <label>Repeat your new password</label>
+            <input id="repeat_password" name="repeat_password" class="form-control"
+                   type="password"
+                   placeholder="Be smart, don't copy and paste. Retype it"
+                   title="Password does not match your new password" />
+        </div>
+        {% if is_admin %}
+        <div class="form-group">
+            <input id="generaterandom" name="generaterandom" type="checkbox" onchange="form.new_password.disabled = !form.new_password.disabled; form.repeat_password.disabled = !form.repeat_password.disabled;" />
+            <label>Generate random password</label>
+        </div>
+        {% endif %}
+    </fieldset>
+    {% if is_admin %}
+        <fieldset class="col-md-6">
+            <h3>Groups</h3>
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col">Group</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for group, active in groups.items() %}
+                        <tr>
+                            <td>{{ group }}</td>
+                            <td>
+                                <input id="group_{{ group }}" name="group_{{ group }}" class="form-control" type="checkbox" {% if active %}checked{% endif %} />
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </fieldset>
+    {% endif %}
+    <hr class="col-md-12" />
+    <div class="form-group">
+        <button id="createorupdateuser" name="createorupdateuser" type="submit" class="btn btn-primary">
+            {% if is_admin %}
+                {% if new %}
+                    Create user and assign groups
+                {% else %}
+                    Update user and groups
+                {% endif %}
+            {% else %}
+                Update my password
+            {% endif %}
+        </button>
+        {% if is_admin %}
+            <button id="deleteuser" name="deleteuser" type="submit" class="btn btn-danger">
+                Delete user
+            </button>
+        {% endif %}
+    </div>
+</form>
+
 {% endblock %}

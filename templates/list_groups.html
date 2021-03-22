@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% set active_page = "list_groups" %}
+
+{% block body %}
+<h1>Group list</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">Group</th>
+            <th scope="col">Users</th>
+            <th scope="col">Administer group</th>
+        </tr>
+    </thead>
+    <tbody>
+
+        {% for group, users in groups.items() %}
+        <tr>
+            <th scope="row">{{ group }}</th>
+            <td>{% for user in users %}{{ user }}, {% endfor %}</td>
+            <td><a href="{{ url_for('group', group=group) }}">Administer group</a></td>
+        </tr>
+        {% endfor %}
+
+    </tbody>
+
+</table>
+{% endblock %}

@@ -1,60 +1,68 @@
 {% extends "base.html" %}
-{% block body %}
-<div class="containter">
-    <div class="col-lg-6 col-lg-offset-3">
-        <div class="row">
-            <form class="form-horizontal centered" method="POST" action=""
-                  onsubmit="return confirm('Ceci va créer ou modifier les utilisateurs avec des mots de passe générés aléatoirement, confirmer ?');">
-                <fieldset class="batch-user-creation">
+{% set active_page = "batch_user_creation" %}
 
-                    <legend>Create a batch of users with random password</legend>
-                    <div class="row">
-                        <div class="batch-user-group col-md-12">
-                            <label class="col-md-4 control-label">
-                                List of user login to create, separate by a new line
-                            </label>
-                            <textarea class="col-md-8" id="users_login" name="users_login"></textarea>
-                        </div>
-                        <div class="form-group row col-md-12">
-                            {% for group in groups %}
-                            <label class="col-md-6 control-label" for="group_{{ group }}">{{ group }}</label>
-                            <div class="col-md-6">
-                                <input id="group_{{ group }}" name="group_{{ group }}" type="checkbox"
-                                       class="form-control input-md col-md-6">
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="form-group col-md-12">
-                            {% if mail_capabilities %}
-                            <div class="col-md-6">
-                                <label>
-                                    <input id="send_mail" name="send_mail" type="checkbox" class="input-md" />
-                                    Send a mail to the user(s) with its newly created/updated password
-                                </label>
-                                <br />
-                                <input id="mail_suffix" name="mail_suffix" type="text" class="col-md-12"
-                                       placeholder="Add a suffix for mail address (optionnal)" />
-                                <input id="instance" name="instance" type="text" class="col-md-12"
-                                       placeholder="Instance of application" />
-                            </div>
-                            {% endif %}
-                            <div class="col-md-6">
-                                <button id="singlebutton" name="singlebutton" class="btn btn-primary">
-                                    Create with random password
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </fieldset>
-            </form>
-            {% if result %}
-            <div>
-                <textarea>{{ result }}</textarea>
-            </div>
-            {% endif %}
+{% block body %}
+
+<h1>Create a batch of users with random password</h1>
+
+<form class="row" method="POST" action=""
+    onsubmit="return confirm('Ceci va créer ou modifier les utilisateurs avec des mots de passe générés aléatoirement, confirmer ?');">
+    <fieldset class="col-md-6">
+        <h3>Users</h3>
+        <div class="form-group">
+            <label class="control-label">
+                List of user login to create, separate by a new line
+            </label>
+            <textarea class="form-control" id="users_login" name="users_login"></textarea>
         </div>
-    </div>
+    </fieldset>
+    <fieldset class="col-md-6">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">Group</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for group in groups %}
+                    <tr>
+                        <td>{{ group }}</td>
+                        <td>
+                            <input id="group_{{ group }}" name="group_{{ group }}" class="form-control" type="checkbox" />
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </fieldset>
+    {% if mail_capabilities %}
+    <fieldset class="form-inline col-md-12">
+        <h3>Send a mail to the user(s) with its newly created/updated password (optionnal)</h3>
+        <div class="form-group">
+            <input id="send_mail" name="send_mail" type="checkbox" class="form-control mx-sm-3" onchange="form.mail_suffix.disabled = !form.send_mail.checked; form.instance.disabled = !form.send_mail.checked;" />
+            <label>Send a mail to every user with there accound</label>
+        </div>
+        <br />
+        <input id="mail_suffix" name="mail_suffix" type="text" class="form-control mx-sm-3"
+            placeholder="Add a suffix for mail address (optionnal)" title="Add a suffix for mail address if required to build a valid mail adress ; for example: @myclient.com" disabled />
+        <input id="instance" name="instance" type="text" class="form-control mx-sm-3"
+            placeholder="Instance of application" title="Name of the instance, mainly used to build the link to it in the mail" disabled  />
+    </fieldset>
+    {% endif %}
+    <fieldset class="col-md-12">
+        <hr />
+        <div class="form-group">
+            <button id="singlebutton" name="singlebutton" class="btn btn-primary">
+                Create with random password
+            </button>
+        </div>
+    </fieldset>
+</form>
+{% if result %}
+<div>
+    <textarea>{{ result }}</textarea>
 </div>
+{% endif %}
+
 {% endblock %}
