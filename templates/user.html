@@ -103,8 +103,9 @@
                 Update my password
             {% endif %}
         </button>
-        {% if is_admin %}
-            <button id="deleteuser" name="deleteuser" type="submit" class="btn btn-danger">
+        {% if is_admin and not new %}
+            <button id="deleteuser" name="deleteuser" type="submit" class="btn btn-danger"
+                    onclick="return confirm('You are about to delete the user, are you sure?');">
                 Delete user
             </button>
         {% endif %}

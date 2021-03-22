@@ -152,6 +152,32 @@ def user(username):
             message = ""
             message_details = ""
 
+            if "deleteuser" in request.form:
+                with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
+                    with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
+                        # Delete the user
+                        userdb.pop(username)
+
+                        # Remove the user from all groups it is in
+                        for group in groupdb.groups:
+                            if groupdb.is_user_in(username, group):
+                                groupdb.delete_user(username, group)
+                                groups[group] = False
+
+                # Redirect to the same page (you can create the user again...)
+                message = "User %s successfully deleted" % username
+                return render_template(
+                    "user.html",
+                    username=username,
+                    new=True,
+                    is_admin=is_admin,
+                    groups=groups,
+                    password_pattern=CONF["PASSWORD_PATTERN"],
+                    password_pattern_help=CONF["PASSWORD_PATTERN_HELP"],
+                    message=message,
+                    success=success,
+                )
+
             if (
                 "generaterandom" in request.form
                 or request.form["new_password"] != ""
@@ -233,7 +259,7 @@ def user(username):
                 return render_template(
                     "user.html",
                     username=username,
-                    new=new_user,
+                    new=False,
                     is_admin=is_admin,
                     groups=groups,
                     password_pattern=CONF["PASSWORD_PATTERN"],
