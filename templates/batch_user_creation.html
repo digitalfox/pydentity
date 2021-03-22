@@ -36,28 +36,26 @@
             </tbody>
         </table>
     </fieldset>
+    {% if mail_capabilities %}
+    <fieldset class="form-inline col-md-12">
+        <h3>Send a mail to the user(s) with its newly created/updated password (optionnal)</h3>
+        <div class="form-group">
+            <input id="send_mail" name="send_mail" type="checkbox" class="form-control mx-sm-3" onchange="form.mail_suffix.disabled = !form.send_mail.checked; form.instance.disabled = !form.send_mail.checked;" />
+            <label>Send a mail to every user with there accound</label>
+        </div>
+        <br />
+        <input id="mail_suffix" name="mail_suffix" type="text" class="form-control mx-sm-3"
+            placeholder="Add a suffix for mail address (optionnal)" title="Add a suffix for mail address if required to build a valid mail adress ; for example: @myclient.com" disabled />
+        <input id="instance" name="instance" type="text" class="form-control mx-sm-3"
+            placeholder="Instance of application" title="Name of the instance, mainly used to build the link to it in the mail" disabled  />
+    </fieldset>
+    {% endif %}
     <fieldset class="col-md-12">
-        <div class="row">
-            <div class="form-group">
-                {% if mail_capabilities %}
-                <div class="col-md-6">
-                    <label>
-                        <input id="send_mail" name="send_mail" type="checkbox" class="input-md" />
-                        Send a mail to the user(s) with its newly created/updated password
-                    </label>
-                    <br />
-                    <input id="mail_suffix" name="mail_suffix" type="text" class="col-md-12"
-                        placeholder="Add a suffix for mail address (optionnal)" />
-                    <input id="instance" name="instance" type="text" class="col-md-12"
-                        placeholder="Instance of application" />
-                </div>
-                {% endif %}
-                <div class="col-md-6">
-                    <button id="singlebutton" name="singlebutton" class="btn btn-primary">
-                        Create with random password
-                    </button>
-                </div>
-            </div>
+        <hr />
+        <div class="form-group">
+            <button id="singlebutton" name="singlebutton" class="btn btn-primary">
+                Create with random password
+            </button>
         </div>
     </fieldset>
 </form>
