@@ -17,7 +17,11 @@
         {% for group, users in groups.items() %}
         <tr>
             <th scope="row">{{ group }}</th>
-            <td>{% for user in users %}{{ user }}, {% endfor %}</td>
+            <td>
+                {% for user in users %}
+                    <a href="{{ url_for('user', username=user) }}">{{ user }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </td>
             <td><a href="{{ url_for('group', group=group) }}">Administer group</a></td>
         </tr>
         {% endfor %}

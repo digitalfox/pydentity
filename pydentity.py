@@ -290,6 +290,20 @@ def group(group):
                     groupdb.delete_user(user_to_remove, group)
                     message = "User %s removed from group %s" % (user_to_remove, group)
 
+        # If the user clicked the "Delete a user" button
+        user_to_delete = [g.split("_", 1)[1] for g in list(request.form.keys()) if g.startswith("delete_")]
+        if user_to_delete:
+            user_to_delete = user_to_delete[0]
+            with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
+                with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
+                    # Delete the user from all groups it is in
+                    for group_loop in groupdb.groups:
+                        if groupdb.is_user_in(user_to_delete, group_loop):
+                            groupdb.delete_user(user_to_delete, group_loop)
+                    # Delete the user
+                    userdb.pop(user_to_delete)
+            message = "User %s deleted and removed from all groups" % user_to_delete
+
         # If the user clicked the "Add a user" button
         if "add_user_to_group" in request.form:
             with htpasswd.Group(CONF["GROUP_FILE"]) as groupdb:
@@ -366,6 +380,35 @@ def batch_user_creation():
                     success=True,
                     result=render_template("result_template.html", is_admin=is_admin, result=result),
                 )
+
+
+@app.route(CONF["URL_PREFIX"] + "/stats", methods=["POST", "GET"])
+def stats():
+    is_admin, message = check_user_is_admin(get_remote_user(request))
+    if not is_admin:
+        # User is not admin or admin group does exist. Ciao
+        return render_template("message.html", message=message)
+
+    with htpasswd.Basic(CONF["PWD_FILE"], mode="md5") as userdb:
+        with htpasswd.Group(CONF["GROUP_FILE"]) as groupsdb:
+            number_of_users = len(userdb.users)
+            number_of_groups = len(groupsdb.groups)
+
+            # Compute users without group
+            unassigned_user = userdb.users.copy()
+            for user in userdb.users:
+                for group in groupsdb.groups:
+                    if groupsdb.is_user_in(user, group):
+                        unassigned_user.pop(unassigned_user.index(user))
+                        break
+
+    return render_template(
+        "stats.html",
+        is_admin=is_admin,
+        number_of_users=number_of_users,
+        number_of_groups=number_of_groups,
+        unassigned_user=unassigned_user,
+    )
 
 
 def check_user_is_admin(user):
