@@ -17,15 +17,21 @@
             <tr>
                 <th scope="col">User</th>
                 <th scope="col">Remove from group</th>
+                <th scope="col">Delete user (and remove from group)</th>
             </tr>
         </thead>
         <tbody>
 
             {% for user in users %}
             <tr>
-                <td>{{ user }}</th>
+                <td>
+                    <a href="{{ url_for('user', username=user) }}">{{ user }}</a>
+                </td>
                 <td><button name="remove_{{ user }}" type="submit" class="btn btn-danger">
-                    Remove user from group
+                    Remove from group
+                </button></td>
+                <td><button name="delete_{{ user }}" type="submit" class="btn btn-danger">
+                    Delete user
                 </button></td>
             </tr>
             {% endfor %}

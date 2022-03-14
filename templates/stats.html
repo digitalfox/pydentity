@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% set active_page = "stats" %}
+
+{% block body %}
+<h1>Stats</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">Metric</th>
+            <th scope="col">Value</th>
+            <th scope="col">Detail</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <th scope="row">Number of user</th>
+            <td>{{ number_of_users }}</td>
+            <td><a href="{{ url_for('list_users') }}">List users</a></td>
+        </tr>
+        <tr>
+            <th scope="row">Number of groups</th>
+            <td>{{ number_of_groups }}</td>
+            <td><a href="{{ url_for('list_groups') }}">List groups</a></td>
+        </tr>
+        <tr>
+            <th scope="row">User without groups</th>
+            <td>{{ unassigned_user | length }}</td>
+            <td>
+                {% for user in unassigned_user %}
+                    <a href="{{ url_for('user', username=user) }}">{{ user }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </td>
+        </tr>
+    </tbody>
+</table>
+{% endblock %}
