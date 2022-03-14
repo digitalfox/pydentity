@@ -19,7 +19,7 @@
                     <a class="nav-link" href="{{ url_for('batch_user_creation') }}">Batch user creation</a>
                 </li>
                 <li class="nav-item {% if active_page == "stats" %}active{% endif %}">
-                    <a class="nav-link" href="/stats">Stats</a>
+                    <a class="nav-link" href="{{ url_for('stats') }}">Stats</a>
                 </li>
             </ul>
         </div>
