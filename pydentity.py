@@ -17,7 +17,7 @@ import random
 
 app = Flask(__name__)
 
-# Configuration
+# Default configuration. Don't change this, create pydentity_config.py to override this
 CONF = {
     "PRODUCT_NAME": "My application",
     "PWD_FILE": join(dirname(__file__), "htpasswd"),
@@ -41,6 +41,15 @@ CONF = {
     # Don't put trailing slash. For no prefix, use an empty string
     "URL_PREFIX": "",
 }
+
+# update with local config if any
+try:
+    from pydentity_config import CONF as LOCAL_CONF
+    CONF.update(LOCAL_CONF)
+except ModuleNotFoundError:
+    pass
+
+#
 app.config["PYDENTITY_URL_PREFIX"] = CONF["URL_PREFIX"]
 
 

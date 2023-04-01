@@ -4,3 +4,4 @@ htgroup
 venv
 *.pyc
 mail_settings.py
+pydentity_config.py
