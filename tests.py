@@ -212,7 +212,7 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         data = r.data.decode()
         for group in ("users", "admin"):
-            self.assertIn("""name="group_%s" type="checkbox" checked""" % group, data)
+            self.assertIn("""name="group_%s" class="form-control" type="checkbox" checked""" % group, data)
 
         with htpasswd.Group(self.group) as groupdb:
             self.assertTrue(groupdb.is_user_in("user1", "users"))
